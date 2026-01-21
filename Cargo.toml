@@ -1,0 +1,57 @@
+[package]
+name = "sensor-pipeline"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A real-time sensor data pipeline with lock-free data structures for robotics applications"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourusername/sensor-pipeline"
+keywords = ["robotics", "real-time", "sensor", "lock-free", "pipeline"]
+categories = ["embedded", "concurrency", "science::robotics"]
+
+[lib]
+name = "sensor_pipeline"
+path = "src/lib.rs"
+
+[features]
+default = []
+std = []
+
+[dependencies]
+# None in core library - keep it minimal for no_std compatibility
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.4"
+
+[target.'cfg(loom)'.dependencies]
+loom = "0.7"
+
+[[bench]]
+name = "ring_buffer"
+harness = false
+
+[[bench]]
+name = "pipeline"
+harness = false
+
+[[example]]
+name = "simple_imu"
+path = "examples/simple_imu.rs"
+
+[[example]]
+name = "multi_sensor"
+path = "examples/multi_sensor.rs"
+
+[[example]]
+name = "benchmark_latency"
+path = "examples/benchmark_latency.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+
+[profile.bench]
+lto = true
+codegen-units = 1
