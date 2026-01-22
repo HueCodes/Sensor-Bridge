@@ -1,4 +1,4 @@
-# Sensor Pipeline
+# Sensor-Bridge
 
 A lock-free, real-time sensor data pipeline for robotics in Rust.
 
