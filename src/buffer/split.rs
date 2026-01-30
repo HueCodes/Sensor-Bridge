@@ -319,7 +319,7 @@ mod tests {
             producer.push(i).unwrap();
         }
 
-        let blocking_producer: BackpressureProducer<u32, 8> =
+        let _blocking_producer: BackpressureProducer<u32, 8> =
             BackpressureProducer::new(Arc::new(RingBuffer::new()), BackpressurePolicy::Block);
 
         // Spawn a thread that will consume, unblocking the producer

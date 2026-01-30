@@ -44,9 +44,36 @@ pub mod sensor;
 pub mod stage;
 pub mod timestamp;
 
+#[cfg(feature = "std")]
+pub mod backpressure;
+#[cfg(feature = "std")]
+pub mod channel;
+#[cfg(feature = "std")]
+pub mod zero_copy;
+
 // Re-export commonly used types at crate root
 pub use buffer::{Consumer, Producer, RingBuffer};
 pub use error::{PipelineError, Result};
 pub use sensor::{ImuReading, Sensor};
 pub use stage::Stage;
 pub use timestamp::Timestamped;
+
+// Re-export channel types
+#[cfg(feature = "std")]
+pub use channel::{bounded, unbounded, Receiver, Sender};
+
+// Re-export pipeline types
+#[cfg(feature = "std")]
+pub use pipeline::{MultiStagePipeline, PipelineState, SimplePipelineBuilder};
+
+// Re-export backpressure types
+#[cfg(feature = "std")]
+pub use backpressure::{AdaptiveController, BackpressureStrategy, RateLimiter};
+
+// Re-export zero-copy types
+#[cfg(feature = "std")]
+pub use zero_copy::{BufferPool, ObjectPool, SharedData};
+
+// Re-export metrics types
+#[cfg(feature = "std")]
+pub use metrics::{Dashboard, JitterTracker, PerformanceTargets};
