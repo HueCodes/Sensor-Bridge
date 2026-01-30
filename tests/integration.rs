@@ -1,251 +1,306 @@
 //! Integration tests for the sensor pipeline.
+//!
+//! These tests verify end-to-end functionality of the pipeline.
 
-use sensor_pipeline::{
-    buffer::RingBuffer,
-    pipeline::{PipelineBuilder, PipelineRunner},
-    sensor::{ImuReading, MockImu, NoiseConfig, Sensor, Vec3},
-    stage::{Chain, ExponentialMovingAverage, Filter, Map, MovingAverage, Stage},
-    timestamp::{MonotonicClock, Timestamped},
-};
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
+
+use sensor_pipeline::channel::bounded;
+use sensor_pipeline::metrics::{PerformanceTargets, StageMetricsCollector};
+use sensor_pipeline::pipeline::{MultiStagePipelineBuilder, PipelineConfig, PipelineState};
+use sensor_pipeline::stage::{Filter, Identity, Map};
 
 #[test]
-fn test_full_pipeline_integration() {
-    // Create buffer
-    let buffer: RingBuffer<Timestamped<ImuReading>, 256> = RingBuffer::new();
-    let (producer, consumer) = buffer.split();
-
-    // Create mock sensor
-    let mut imu = MockImu::new(100.0)
-        .with_noise(NoiseConfig::none(), NoiseConfig::none())
-        .with_base_accel(Vec3::new(0.0, 0.0, -9.81));
-
-    // Create pipeline
-    let pipeline = PipelineBuilder::new()
-        .map(|ts: Timestamped<ImuReading>| ts.data.accel.z)
-        .then(MovingAverage::<f32, 5>::new())
+fn test_pipeline_lifecycle() {
+    let mut pipeline = MultiStagePipelineBuilder::<i32, i32, _, _, _, _>::new()
+        .config(PipelineConfig::default().channel_capacity(16))
+        .ingestion(Identity::new())
+        .filtering(Identity::new())
+        .aggregation(Identity::new())
+        .output(Identity::new())
         .build();
 
-    let mut runner = PipelineRunner::new(consumer, pipeline);
+    assert_eq!(pipeline.state(), PipelineState::Running);
 
-    // Generate and process samples
-    for _ in 0..10 {
-        let sample = imu.sample().expect("Sensor should produce sample");
-        producer.push(sample).expect("Buffer should have space");
-    }
-
-    // Verify processing
-    let mut outputs = Vec::new();
-    runner.drain(|output| outputs.push(output));
-
-    assert_eq!(outputs.len(), 10);
-
-    // All outputs should be close to -9.81 (gravity)
-    for output in outputs {
-        assert!(
-            (output - (-9.81)).abs() < 0.1,
-            "Output {output} should be close to -9.81"
-        );
-    }
-}
-
-#[test]
-fn test_pipeline_with_filtering() {
-    let buffer: RingBuffer<i32, 64> = RingBuffer::new();
-    let (producer, consumer) = buffer.split();
-
-    // Pipeline that filters out negative numbers and doubles positives
-    let pipeline = PipelineBuilder::new()
-        .filter(|x: &i32| *x >= 0)
-        .map(|x| x * 2)
-        .build();
-
-    let mut runner = PipelineRunner::new(consumer, pipeline);
-
-    // Push mixed values
-    for i in -5..=5 {
-        producer.push(i).unwrap();
-    }
-
-    let mut outputs = Vec::new();
-    runner.drain(|x| outputs.push(x));
-
-    // Should only have doubled positive values (including 0)
-    assert_eq!(outputs, vec![0, 2, 4, 6, 8, 10]);
-    assert_eq!(runner.stats().processed_count, 11);
-    assert_eq!(runner.stats().filtered_count, 5); // -5, -4, -3, -2, -1
-}
-
-#[test]
-fn test_timestamp_preservation() {
-    let clock = MonotonicClock::new();
-    let buffer: RingBuffer<Timestamped<u32>, 64> = RingBuffer::new();
-    let (producer, consumer) = buffer.split();
-
-    // Pipeline that preserves timestamps
-    let pipeline = PipelineBuilder::new()
-        .map(|ts: Timestamped<u32>| (ts.timestamp_ns, ts.data * 2))
-        .build();
-
-    let mut runner = PipelineRunner::new(consumer, pipeline);
-
-    // Push timestamped values
-    let ts1 = clock.stamp(10u32);
-    let ts2 = clock.stamp(20u32);
-
-    producer.push(ts1).unwrap();
-    producer.push(ts2).unwrap();
-
-    // Verify timestamps are preserved
-    let (out_ts1, val1) = runner.poll().unwrap();
-    let (out_ts2, val2) = runner.poll().unwrap();
-
-    assert_eq!(out_ts1, ts1.timestamp_ns);
-    assert_eq!(val1, 20);
-    assert_eq!(out_ts2, ts2.timestamp_ns);
-    assert_eq!(val2, 40);
-
-    // Timestamps should be monotonically increasing
-    assert!(out_ts2 >= out_ts1);
-}
-
-#[test]
-fn test_moving_average_convergence() {
-    let mut filter: MovingAverage<f32, 10> = MovingAverage::new();
-
-    // Feed constant value
-    for _ in 0..100 {
-        filter.process(5.0);
-    }
-
-    // Should converge to input value
-    let result = filter.current().unwrap();
-    assert!((result - 5.0).abs() < 0.001);
-}
-
-#[test]
-fn test_ema_smoothing() {
-    let mut ema: ExponentialMovingAverage<f32> = ExponentialMovingAverage::new(0.5);
-
-    // First value is passed through
-    assert_eq!(ema.process(10.0), Some(10.0));
-
-    // Second value is averaged
-    // EMA = 0.5 * 0 + 0.5 * 10 = 5
-    let result = ema.process(0.0).unwrap();
-    assert!((result - 5.0).abs() < 0.001);
-}
-
-#[test]
-fn test_chain_composition() {
-    let double = Map::new(|x: i32| x * 2);
-    let add_one = Map::new(|x: i32| x + 1);
-    let filter_big = Filter::new(|x: &i32| *x > 10);
-
-    let mut chain = Chain::new(Chain::new(double, add_one), filter_big);
-
-    // 5 -> 10 -> 11 -> passes filter
-    assert_eq!(chain.process(5), Some(11));
-
-    // 3 -> 6 -> 7 -> filtered out
-    assert_eq!(chain.process(3), None);
-}
-
-#[test]
-fn test_buffer_full_behavior() {
-    // Small buffer to test full behavior
-    let buffer: RingBuffer<u32, 4> = RingBuffer::new();
-    let (producer, consumer) = buffer.split();
-
-    // Fill buffer (capacity is N-1 = 3)
-    assert!(producer.push(1).is_ok());
-    assert!(producer.push(2).is_ok());
-    assert!(producer.push(3).is_ok());
-
-    // Buffer is now full
-    assert!(producer.is_full());
-    assert!(producer.push(4).is_err());
-
-    // Pop one, should allow one more push
-    assert_eq!(consumer.pop(), Some(1));
-    assert!(producer.push(4).is_ok());
-
-    // Verify order
-    assert_eq!(consumer.pop(), Some(2));
-    assert_eq!(consumer.pop(), Some(3));
-    assert_eq!(consumer.pop(), Some(4));
-    assert_eq!(consumer.pop(), None);
-}
-
-#[test]
-fn test_vec3_operations() {
-    let v1 = Vec3::new(1.0, 2.0, 3.0);
-    let v2 = Vec3::new(4.0, 5.0, 6.0);
-
-    // Addition
-    let sum = v1 + v2;
-    assert_eq!(sum, Vec3::new(5.0, 7.0, 9.0));
-
-    // Magnitude of (3, 4, 0) should be 5
-    let v3 = Vec3::new(3.0, 4.0, 0.0);
-    assert!((v3.magnitude() - 5.0).abs() < 0.001);
-
-    // Dot product
-    let dot = v1.dot(&v2);
-    // 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32
-    assert!((dot - 32.0).abs() < 0.001);
-}
-
-#[test]
-fn test_imu_reading_structure() {
-    let reading = ImuReading::from_arrays([1.0, 2.0, 3.0], [0.1, 0.2, 0.3]);
-
-    assert_eq!(reading.accel_array(), [1.0, 2.0, 3.0]);
-    assert_eq!(reading.gyro_array(), [0.1, 0.2, 0.3]);
-
-    // Test magnitude
-    let accel_mag = reading.accel_magnitude();
-    // sqrt(1 + 4 + 9) = sqrt(14) ≈ 3.74
-    assert!((accel_mag - 14.0f32.sqrt()).abs() < 0.001);
-}
-
-#[test]
-fn test_sequence_numbers() {
-    let clock = MonotonicClock::new();
-
-    let ts1 = clock.stamp(1u32);
-    let ts2 = clock.stamp(2u32);
-    let ts3 = clock.stamp(3u32);
-
-    assert_eq!(ts1.seq, 0);
-    assert_eq!(ts2.seq, 1);
-    assert_eq!(ts3.seq, 2);
-
-    // Timestamps should be monotonic
-    assert!(ts2.timestamp_ns >= ts1.timestamp_ns);
-    assert!(ts3.timestamp_ns >= ts2.timestamp_ns);
-}
-
-#[test]
-fn test_pipeline_stats() {
-    let buffer: RingBuffer<i32, 64> = RingBuffer::new();
-    let (producer, consumer) = buffer.split();
-
-    let pipeline = PipelineBuilder::new()
-        .filter(|x: &i32| *x % 2 == 0)
-        .map(|x| x * 2)
-        .build();
-
-    let mut runner = PipelineRunner::new(consumer, pipeline);
-
-    // Push 10 values (5 even, 5 odd)
+    // Send some data
     for i in 0..10 {
-        producer.push(i).unwrap();
+        pipeline.send(i).unwrap();
     }
 
-    runner.drain(|_| {});
+    // Wait for processing
+    thread::sleep(Duration::from_millis(50));
 
-    let stats = runner.stats();
-    assert_eq!(stats.processed_count, 10);
-    assert_eq!(stats.output_count, 5); // Only even numbers
-    assert_eq!(stats.filtered_count, 5); // Odd numbers filtered
+    // Receive results
+    let mut received = 0;
+    while pipeline.try_recv().is_some() {
+        received += 1;
+    }
+    assert_eq!(received, 10);
+
+    // Shutdown
+    pipeline.shutdown();
+    pipeline.join().unwrap();
+
+    assert_eq!(pipeline.state(), PipelineState::Stopped);
+}
+
+#[test]
+fn test_pipeline_filtering() {
+    let mut pipeline = MultiStagePipelineBuilder::<i32, i32, _, _, _, _>::new()
+        .config(PipelineConfig::default().channel_capacity(16))
+        .ingestion(Identity::new())
+        .filtering(Filter::new(|x: &i32| *x > 0))
+        .aggregation(Identity::new())
+        .output(Identity::new())
+        .build();
+
+    // Send mixed positive and negative numbers
+    for i in -5..=5 {
+        pipeline.send(i).unwrap();
+    }
+
+    thread::sleep(Duration::from_millis(50));
+
+    // Only positive numbers should pass
+    let mut results = Vec::new();
+    while let Some(v) = pipeline.try_recv() {
+        results.push(v);
+    }
+
+    assert_eq!(results.len(), 5); // 1, 2, 3, 4, 5
+    assert!(results.iter().all(|&x| x > 0));
+
+    pipeline.shutdown();
+    pipeline.join().unwrap();
+}
+
+#[test]
+fn test_pipeline_transformation() {
+    let mut pipeline = MultiStagePipelineBuilder::<i32, i32, _, _, _, _>::new()
+        .config(PipelineConfig::default().channel_capacity(16))
+        .ingestion(Map::new(|x: i32| x + 1))
+        .filtering(Map::new(|x: i32| x * 2))
+        .aggregation(Map::new(|x: i32| x - 1))
+        .output(Identity::new())
+        .build();
+
+    // f(x) = ((x + 1) * 2) - 1 = 2x + 1
+    for i in 0..5 {
+        pipeline.send(i).unwrap();
+    }
+
+    thread::sleep(Duration::from_millis(50));
+
+    let mut results = Vec::new();
+    while let Some(v) = pipeline.try_recv() {
+        results.push(v);
+    }
+
+    assert_eq!(results.len(), 5);
+    for (i, &v) in results.iter().enumerate() {
+        assert_eq!(v, 2 * (i as i32) + 1);
+    }
+
+    pipeline.shutdown();
+    pipeline.join().unwrap();
+}
+
+#[test]
+fn test_channel_basic() {
+    let (tx, rx) = bounded::<u32>(100);
+
+    for i in 0..50 {
+        tx.send(i).unwrap();
+    }
+
+    for i in 0..50 {
+        assert_eq!(rx.recv(), Some(i));
+    }
+
+    assert_eq!(tx.metrics().sent(), 50);
+    assert_eq!(rx.metrics().received(), 50);
+}
+
+#[test]
+fn test_channel_threaded() {
+    let (tx, rx) = bounded::<u64>(1024);
+    let count = 50_000u64;
+
+    let producer = thread::spawn(move || {
+        for i in 0..count {
+            tx.send(i).unwrap();
+        }
+    });
+
+    let consumer = thread::spawn(move || {
+        let mut received = 0u64;
+        let mut expected = 0u64;
+        while expected < count {
+            if let Some(v) = rx.recv() {
+                assert_eq!(v, expected);
+                expected += 1;
+                received += 1;
+            }
+        }
+        received
+    });
+
+    producer.join().unwrap();
+    let received = consumer.join().unwrap();
+    assert_eq!(received, count);
+}
+
+#[test]
+fn test_performance_targets() {
+    let targets = PerformanceTargets::default()
+        .min_throughput(10_000.0)
+        .max_p99_latency_ms(10.0)
+        .max_jitter_ms(2.0);
+
+    assert_eq!(targets.min_throughput, 10_000.0);
+    assert_eq!(targets.max_p99_latency_us, 10_000.0);
+    assert_eq!(targets.max_jitter_ms, 2.0);
+}
+
+#[test]
+fn test_metrics_aggregator() {
+    let mut aggregator = sensor_pipeline::metrics::PipelineMetricsAggregator::new();
+
+    let stage = Arc::new(StageMetricsCollector::new("test_stage"));
+    aggregator.add_stage(Arc::clone(&stage));
+
+    // Simulate processing
+    for _ in 0..100 {
+        aggregator.record_input();
+        stage.record_input();
+        stage.record_output(1000);
+        aggregator.record_output(1000);
+    }
+
+    let snapshot = aggregator.snapshot();
+    assert_eq!(snapshot.total_input, 100);
+    assert_eq!(snapshot.total_output, 100);
+    assert_eq!(snapshot.stages.len(), 1);
+    assert_eq!(snapshot.stages[0].output_count, 100);
+}
+
+#[test]
+fn test_object_pool() {
+    use sensor_pipeline::zero_copy::ObjectPool;
+
+    let pool = ObjectPool::new(|| Vec::<u8>::with_capacity(256), 10);
+    pool.prefill(10);
+
+    assert_eq!(pool.available(), 10);
+
+    {
+        let mut buf = pool.acquire();
+        buf.extend_from_slice(b"test");
+        assert_eq!(&*buf, b"test");
+    }
+
+    // Buffer returned to pool
+    assert_eq!(pool.available(), 10);
+    assert_eq!(pool.acquired(), 0);
+}
+
+#[test]
+fn test_buffer_pool() {
+    use sensor_pipeline::zero_copy::BufferPool;
+
+    let pool = BufferPool::new(10);
+    pool.prefill(5, 3, 1);
+
+    assert_eq!(pool.available_small(), 5);
+    assert_eq!(pool.available_medium(), 3);
+    assert_eq!(pool.available_large(), 1);
+
+    {
+        let mut buf = pool.acquire(100);
+        buf.extend_from_slice(b"sensor data");
+    }
+
+    // Buffer returned
+    assert_eq!(pool.available_small(), 5);
+}
+
+#[test]
+fn test_shared_data() {
+    use sensor_pipeline::zero_copy::SharedData;
+
+    let data = SharedData::new(vec![1, 2, 3, 4, 5]);
+    let data2 = data.clone();
+
+    assert_eq!(&*data, &*data2);
+    assert_eq!(data.ref_count(), 2);
+
+    drop(data2);
+    assert_eq!(data.ref_count(), 1);
+    assert!(data.is_unique());
+}
+
+#[test]
+fn test_rate_limiter() {
+    use sensor_pipeline::backpressure::{RateLimiter, RateLimiterConfig};
+
+    let limiter = RateLimiter::new(
+        RateLimiterConfig::default()
+            .capacity(10)
+            .initial_tokens(10)
+            .refill_rate(0.0), // No refill for deterministic test
+    );
+
+    // Should allow 10 acquisitions
+    for _ in 0..10 {
+        assert!(limiter.try_acquire());
+    }
+
+    // Should reject
+    assert!(!limiter.try_acquire());
+
+    assert_eq!(limiter.acquired_count(), 10);
+    assert_eq!(limiter.rejected_count(), 1);
+}
+
+#[test]
+fn test_adaptive_controller() {
+    use sensor_pipeline::backpressure::{AdaptiveController, QualityLevel};
+
+    let controller = AdaptiveController::builder()
+        .high_water_mark(0.8)
+        .low_water_mark(0.5)
+        .hysteresis_threshold(5)
+        .build();
+
+    assert_eq!(controller.quality(), QualityLevel::Full);
+
+    // Simulate high load
+    for _ in 0..10 {
+        controller.update(0.9);
+    }
+
+    assert!(controller.quality() > QualityLevel::Full);
+
+    // Reset
+    controller.reset();
+    assert_eq!(controller.quality(), QualityLevel::Full);
+}
+
+#[test]
+fn test_jitter_tracker() {
+    use sensor_pipeline::metrics::JitterTracker;
+
+    let tracker = JitterTracker::new();
+
+    // Record some values
+    for v in [100, 110, 90, 105, 95] {
+        tracker.record(v);
+    }
+
+    assert_eq!(tracker.count(), 5);
+    assert!((tracker.mean() - 100.0).abs() < 1.0);
+    assert!(tracker.std_dev() > 0.0);
+    assert_eq!(tracker.min(), Some(90));
+    assert_eq!(tracker.max(), Some(110));
 }
