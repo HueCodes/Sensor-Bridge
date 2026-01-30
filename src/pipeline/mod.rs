@@ -39,11 +39,30 @@
 mod builder;
 mod runner;
 
+#[cfg(feature = "std")]
+mod executor;
+#[cfg(feature = "std")]
+mod multi_stage;
+#[cfg(feature = "std")]
+mod stage_handle;
+
 pub use builder::PipelineBuilder;
 pub use runner::{BatchOptions, PipelineRunner, PipelineStats};
 
 #[cfg(feature = "std")]
-pub use builder::{PipelineConfig, SensorPipeline};
+pub use builder::{PipelineConfig as LegacyPipelineConfig, SensorPipeline};
 
 #[cfg(feature = "std")]
 pub use runner::{spawn_pipeline, PipelineHandle};
+
+#[cfg(feature = "std")]
+pub use executor::{StageMetrics, StageMetricsSnapshot, WorkerConfig};
+
+#[cfg(feature = "std")]
+pub use multi_stage::{
+    MultiStagePipeline, MultiStagePipelineBuilder, PipelineConfig,
+    PipelineState, SimplePipelineBuilder,
+};
+
+#[cfg(feature = "std")]
+pub use stage_handle::{StageCommand, StageControl, StageHandle, StageHandleBuilder, StageState};
