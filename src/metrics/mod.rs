@@ -30,7 +30,18 @@
 mod counter;
 mod latency;
 
+#[cfg(feature = "std")]
+mod dashboard;
+#[cfg(feature = "std")]
+mod export;
+mod jitter;
+#[cfg(feature = "std")]
+mod pipeline_metrics;
+#[cfg(feature = "std")]
+mod stage_metrics;
+
 pub use counter::{Counter, PipelineCounterSnapshot, PipelineCounters};
+pub use jitter::{JitterSnapshot, JitterTracker};
 pub use latency::{LatencyHistogram, LatencySnapshot};
 
 #[cfg(feature = "std")]
@@ -38,6 +49,21 @@ pub use counter::RateCounter;
 
 #[cfg(feature = "std")]
 pub use latency::ScopedTimer;
+
+#[cfg(feature = "std")]
+pub use dashboard::{Dashboard, DashboardBuilder, DashboardConfig, StatusLine};
+
+#[cfg(feature = "std")]
+pub use export::{ExportFormat, MetricsExporter, MetricsRecorder, SummaryStatistics};
+
+#[cfg(feature = "std")]
+pub use pipeline_metrics::{
+    LatencyToken, LatencyTracker, PerformanceTargets, PipelineMetricsAggregator,
+    PipelineMetricsSnapshot, TargetCheck,
+};
+
+#[cfg(feature = "std")]
+pub use stage_metrics::{StageMetricsCollector, StageMetricsSnapshot, StageTimer};
 
 /// Aggregate metrics for the entire pipeline.
 #[derive(Debug)]
