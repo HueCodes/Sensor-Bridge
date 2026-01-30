@@ -7,8 +7,8 @@
 
 use sensor_pipeline::{
     buffer::RingBuffer,
-    sensor::{MockImu, NoiseConfig, Sensor, Vec3},
-    stage::{SyncInput, SyncedPair, TimestampSync},
+    sensor::{MockImu, NoiseConfig, Sensor},
+    stage::TimestampSync,
     timestamp::Timestamped,
     ImuReading,
 };

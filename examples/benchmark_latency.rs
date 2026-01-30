@@ -13,7 +13,7 @@ use sensor_pipeline::{
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 fn main() {
     println!("=== Pipeline Latency Benchmark ===\n");
