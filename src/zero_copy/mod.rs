@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```rust,ignore
-//! use sensor_pipeline::zero_copy::{ObjectPool, PoolGuard};
+//! use sensor_bridge::zero_copy::{ObjectPool, PoolGuard};
 //!
 //! // Create a pool of sensor readings
 //! let pool = ObjectPool::new(|| SensorReading::default(), 100);
@@ -29,10 +29,10 @@
 //! drop(reading);
 //! ```
 
-mod shared_data;
-mod object_pool;
 mod buffer_pool;
+mod object_pool;
+mod shared_data;
 
-pub use shared_data::SharedData;
-pub use object_pool::{ObjectPool, PoolGuard, PooledObject};
 pub use buffer_pool::{BufferPool, PooledBuffer};
+pub use object_pool::{ObjectPool, PoolGuard, PooledObject};
+pub use shared_data::SharedData;

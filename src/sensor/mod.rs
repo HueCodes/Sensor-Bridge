@@ -11,9 +11,9 @@
 //! To create a new sensor, implement the [`Sensor`] trait:
 //!
 //! ```rust
-//! use sensor_pipeline::sensor::{Sensor, ImuReading};
-//! use sensor_pipeline::timestamp::Timestamped;
-//! use sensor_pipeline::error::Result;
+//! use sensor_bridge::sensor::{Sensor, ImuReading};
+//! use sensor_bridge::timestamp::Timestamped;
+//! use sensor_bridge::error::Result;
 //!
 //! struct MyImu;
 //!
@@ -37,7 +37,7 @@ mod traits;
 mod mock;
 
 // Re-export main types
-pub use imu::{ImuCalibration, ImuReading, Imu9DofReading, Vec3};
+pub use imu::{Imu9DofReading, ImuCalibration, ImuReading, Vec3};
 pub use lidar::{LidarPoint2D, LidarPoint3D, LidarScanFixed};
 pub use traits::{CalibratableSensor, ConfigurableSensor, Sensor, SensorInfo};
 

@@ -15,12 +15,22 @@ use super::Stage;
 ///
 /// This is automatically implemented for types that support the required operations.
 pub trait Filterable:
-    Copy + Default + Add<Output = Self> + Sub<Output = Self> + Mul<f32, Output = Self> + Div<f32, Output = Self>
+    Copy
+    + Default
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<f32, Output = Self>
+    + Div<f32, Output = Self>
 {
 }
 
 impl<T> Filterable for T where
-    T: Copy + Default + Add<Output = T> + Sub<Output = T> + Mul<f32, Output = T> + Div<f32, Output = T>
+    T: Copy
+        + Default
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<f32, Output = T>
+        + Div<f32, Output = T>
 {
 }
 
@@ -37,7 +47,7 @@ impl<T> Filterable for T where
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::stage::{Stage, MovingAverage};
+/// use sensor_bridge::stage::{Stage, MovingAverage};
 ///
 /// let mut filter: MovingAverage<f32, 3> = MovingAverage::new();
 ///
@@ -147,7 +157,7 @@ impl<T: Filterable + Send, const WINDOW: usize> Stage for MovingAverage<T, WINDO
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::stage::{Stage, ExponentialMovingAverage};
+/// use sensor_bridge::stage::{Stage, ExponentialMovingAverage};
 ///
 /// // High alpha (0.9) = responsive
 /// let mut responsive: ExponentialMovingAverage<f32> = ExponentialMovingAverage::new(0.9);
@@ -245,7 +255,7 @@ impl<T: Filterable + Send> Stage for ExponentialMovingAverage<T> {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::stage::{Stage, KalmanFilter1D};
+/// use sensor_bridge::stage::{Stage, KalmanFilter1D};
 ///
 /// let mut filter = KalmanFilter1D::new(
 ///     0.0,   // Initial estimate

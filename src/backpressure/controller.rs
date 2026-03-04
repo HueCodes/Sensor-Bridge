@@ -58,7 +58,7 @@ impl QualityLevel {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::backpressure::{AdaptiveController, QualityLevel};
+/// use sensor_bridge::backpressure::{AdaptiveController, QualityLevel};
 ///
 /// let controller = AdaptiveController::builder()
 ///     .high_water_mark(0.8)
@@ -194,7 +194,8 @@ impl AdaptiveController {
 
     /// Resets the controller to initial state.
     pub fn reset(&self) {
-        self.quality_level.store(QualityLevel::Full as u32, Ordering::Relaxed);
+        self.quality_level
+            .store(QualityLevel::Full as u32, Ordering::Relaxed);
         self.sample_counter.store(0, Ordering::Relaxed);
         self.hysteresis_counter.store(0, Ordering::Relaxed);
         self.stats.reset();
@@ -395,7 +396,7 @@ mod tests {
         }
 
         // Due to sampling, should be around 25
-        assert!(accepted >= 20 && accepted <= 30, "accepted {}", accepted);
+        assert!((20..=30).contains(&accepted), "accepted {accepted}");
     }
 
     #[test]
@@ -427,7 +428,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "low water mark must be less than high water mark")]
     fn test_builder_invalid_water_marks() {
-        AdaptiveController::builder()
+        let _ = AdaptiveController::builder()
             .high_water_mark(0.5)
             .low_water_mark(0.8)
             .build();

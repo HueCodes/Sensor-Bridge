@@ -158,7 +158,10 @@ impl LatencyHistogram {
     /// * `p` - Percentile (0.0 to 1.0), e.g., 0.99 for p99
     #[must_use]
     pub fn percentile(&self, p: f64) -> u64 {
-        assert!((0.0..=1.0).contains(&p), "Percentile must be between 0 and 1");
+        assert!(
+            (0.0..=1.0).contains(&p),
+            "Percentile must be between 0 and 1"
+        );
 
         let count = self.count.load(Ordering::Relaxed);
         if count == 0 {
@@ -355,11 +358,11 @@ mod tests {
 
         // p50 should be approximately 50 (bucket approximation means this is rough)
         let p50 = hist.p50();
-        assert!(p50 >= 8 && p50 <= 128, "p50 was {p50}");
+        assert!((8..=128).contains(&p50), "p50 was {p50}");
 
         // p99 should be approximately 99
         let p99 = hist.p99();
-        assert!(p99 >= 32 && p99 <= 256, "p99 was {p99}");
+        assert!((32..=256).contains(&p99), "p99 was {p99}");
     }
 
     #[test]

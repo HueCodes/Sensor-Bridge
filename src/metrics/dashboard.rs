@@ -9,7 +9,9 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use super::pipeline_metrics::{PerformanceTargets, PipelineMetricsAggregator, PipelineMetricsSnapshot};
+use super::pipeline_metrics::{
+    PerformanceTargets, PipelineMetricsAggregator, PipelineMetricsSnapshot,
+};
 
 /// Configuration for the dashboard.
 #[derive(Debug, Clone)]
@@ -296,7 +298,11 @@ impl DashboardRenderer {
     }
 
     fn status_indicator(ok: bool) -> &'static str {
-        if ok { "[OK]" } else { "[X]" }
+        if ok {
+            "[OK]"
+        } else {
+            "[X]"
+        }
     }
 
     fn sparkline(values: &[f64]) -> String {

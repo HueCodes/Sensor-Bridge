@@ -5,7 +5,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Strategy for handling backpressure when buffers are full.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BackpressureStrategy {
     /// Block until space is available.
     /// Good for batch processing where all data must be processed.
@@ -13,6 +13,7 @@ pub enum BackpressureStrategy {
 
     /// Drop the newest item (the one being added).
     /// Preserves order and older data.
+    #[default]
     DropNewest,
 
     /// Drop the oldest item to make room for the new one.
@@ -29,12 +30,6 @@ pub enum BackpressureStrategy {
     /// Adaptive strategy that adjusts based on load.
     /// Starts with Block and progressively drops more under pressure.
     Adaptive,
-}
-
-impl Default for BackpressureStrategy {
-    fn default() -> Self {
-        Self::DropNewest
-    }
 }
 
 impl BackpressureStrategy {
@@ -224,12 +219,14 @@ impl std::fmt::Display for BackpressureStatsSnapshot {
 }
 
 /// A sampler that accepts every Nth item.
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Sampler {
     rate: u32,
     counter: AtomicU64,
 }
 
+#[allow(dead_code)]
 impl Sampler {
     /// Creates a new sampler with the given rate.
     ///

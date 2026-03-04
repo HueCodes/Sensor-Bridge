@@ -18,7 +18,7 @@ use crossbeam::queue::ArrayQueue;
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::zero_copy::ObjectPool;
+/// use sensor_bridge::zero_copy::ObjectPool;
 ///
 /// #[derive(Default)]
 /// struct SensorReading {
@@ -66,15 +66,14 @@ impl<T> ObjectPool<T> {
         F: Fn() -> T + Send + Sync + 'static,
     {
         let queue = ArrayQueue::new(capacity);
-        let pool = Arc::new(Self {
+        Arc::new(Self {
             queue,
             factory: Box::new(factory),
             reset: None,
             acquired_count: AtomicUsize::new(0),
             total_created: AtomicUsize::new(0),
             capacity,
-        });
-        pool
+        })
     }
 
     /// Creates a new object pool with a reset function.
@@ -281,7 +280,7 @@ impl<T> DerefMut for PooledObject<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use std::thread;
 
     #[derive(Default)]
@@ -291,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_basic() {
-        let pool = ObjectPool::new(|| TestObject::default(), 10);
+        let pool = ObjectPool::new(TestObject::default, 10);
         pool.prefill(5);
 
         assert_eq!(pool.available(), 5);
@@ -311,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_reuse() {
-        let pool = ObjectPool::new(|| TestObject::default(), 10);
+        let pool = ObjectPool::new(TestObject::default, 10);
 
         // Acquire and set value
         {
@@ -326,11 +325,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_with_reset() {
-        let pool = ObjectPool::with_reset(
-            || TestObject::default(),
-            |obj| obj.value = 0,
-            10,
-        );
+        let pool = ObjectPool::with_reset(TestObject::default, |obj| obj.value = 0, 10);
 
         {
             let mut obj = pool.acquire();
@@ -344,7 +339,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_overflow() {
-        let pool = ObjectPool::new(|| TestObject::default(), 2);
+        let pool = ObjectPool::new(TestObject::default, 2);
         pool.prefill(2);
 
         // Acquire all objects
@@ -366,7 +361,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_try_acquire() {
-        let pool = ObjectPool::new(|| TestObject::default(), 10);
+        let pool = ObjectPool::new(TestObject::default, 10);
 
         // Empty pool
         assert!(pool.try_acquire().is_none());
@@ -381,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_take() {
-        let pool = ObjectPool::new(|| TestObject::default(), 10);
+        let pool = ObjectPool::new(TestObject::default, 10);
         pool.prefill(1);
 
         let guard = pool.acquire();
@@ -394,7 +389,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_concurrent() {
-        let pool = ObjectPool::new(|| TestObject::default(), 100);
+        let pool = ObjectPool::new(TestObject::default, 100);
         pool.prefill(50);
 
         let mut handles = vec![];
@@ -419,7 +414,7 @@ mod tests {
 
     #[test]
     fn test_object_pool_utilization() {
-        let pool = ObjectPool::new(|| TestObject::default(), 100);
+        let pool = ObjectPool::new(TestObject::default, 100);
         pool.prefill(100);
 
         assert_eq!(pool.utilization(), 0.0);

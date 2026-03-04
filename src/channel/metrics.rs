@@ -65,9 +65,11 @@ impl ChannelMetrics {
     pub fn record_receive(&self) {
         self.received.fetch_add(1, Ordering::Relaxed);
         // Saturating sub to handle race conditions where depth could go negative
-        let _ = self.current_depth.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |d| {
-            Some(d.saturating_sub(1))
-        });
+        let _ = self
+            .current_depth
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |d| {
+                Some(d.saturating_sub(1))
+            });
     }
 
     /// Records a dropped item due to backpressure.

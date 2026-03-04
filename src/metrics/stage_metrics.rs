@@ -70,7 +70,9 @@ impl StageMetricsCollector {
     pub fn record_input(&self) {
         self.input_count.increment();
         let now = self.created_at.elapsed().as_nanos() as u64;
-        self.first_item_time.compare_exchange(0, now, Ordering::Relaxed, Ordering::Relaxed).ok();
+        self.first_item_time
+            .compare_exchange(0, now, Ordering::Relaxed, Ordering::Relaxed)
+            .ok();
         self.last_item_time.store(now, Ordering::Relaxed);
     }
 

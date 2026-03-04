@@ -120,8 +120,8 @@ struct StageData {
 /// # Example
 ///
 /// ```rust,ignore
-/// use sensor_pipeline::pipeline::{MultiStagePipeline, PipelineConfig};
-/// use sensor_pipeline::stage::{Map, Filter, Identity};
+/// use sensor_bridge::pipeline::{MultiStagePipeline, PipelineConfig};
+/// use sensor_bridge::stage::{Map, Filter, Identity};
 ///
 /// let pipeline = MultiStagePipeline::builder()
 ///     .config(PipelineConfig::default())
@@ -275,7 +275,8 @@ where
 
     /// Initiates graceful shutdown of the pipeline.
     pub fn shutdown(&mut self) {
-        self.state.store(PipelineState::Stopping as u8, Ordering::Release);
+        self.state
+            .store(PipelineState::Stopping as u8, Ordering::Release);
 
         // Request shutdown for all stages
         for stage in &self.stages {
@@ -296,7 +297,10 @@ where
             if let Some(thread) = stage.thread.take() {
                 let remaining = deadline.saturating_duration_since(Instant::now());
                 if remaining.is_zero() {
-                    return Err(format!("Timeout waiting for stage '{}' to finish", stage.name));
+                    return Err(format!(
+                        "Timeout waiting for stage '{}' to finish",
+                        stage.name
+                    ));
                 }
 
                 // We can't do a timed join in std, so just join
@@ -306,7 +310,8 @@ where
             }
         }
 
-        self.state.store(PipelineState::Stopped as u8, Ordering::Release);
+        self.state
+            .store(PipelineState::Stopped as u8, Ordering::Release);
         Ok(())
     }
 
@@ -386,6 +391,7 @@ where
 {
     /// Creates a new builder.
     #[must_use]
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             config: PipelineConfig::default(),
@@ -682,10 +688,10 @@ mod tests {
         let mut pipeline = SimplePipelineBuilder::<i32>::new()
             .config(PipelineConfig::default().channel_capacity(16))
             .build_with(
-                |x| Some(x + 1),        // ingestion: +1
+                |x| Some(x + 1),                        // ingestion: +1
                 |x| if x > 2 { Some(x) } else { None }, // filter: >2
-                |x| Some(x * 2),        // aggregation: *2
-                |x| Some(x),            // output: passthrough
+                |x| Some(x * 2),                        // aggregation: *2
+                Some,                                   // output: passthrough
             );
 
         pipeline.send(1).unwrap(); // 1+1=2, filtered
@@ -719,7 +725,7 @@ mod tests {
         pipeline.pause();
         // All stages should be paused
         for (name, _) in pipeline.metrics() {
-            assert!(name.len() > 0);
+            assert!(!name.is_empty());
         }
 
         pipeline.resume();

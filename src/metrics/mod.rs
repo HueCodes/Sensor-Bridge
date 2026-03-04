@@ -10,7 +10,7 @@
 //! # Example
 //!
 //! ```rust
-//! use sensor_pipeline::metrics::{LatencyHistogram, Counter, PipelineCounters};
+//! use sensor_bridge::metrics::{LatencyHistogram, Counter, PipelineCounters};
 //!
 //! // Track latency
 //! let latency = LatencyHistogram::new();

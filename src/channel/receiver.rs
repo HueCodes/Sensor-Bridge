@@ -314,15 +314,12 @@ mod tests {
         let consumer = thread::spawn(move || {
             let mut received = 0u32;
             for expected in 0..count {
-                loop {
-                    match rx.recv() {
-                        Some(v) => {
-                            assert_eq!(v, expected);
-                            received += 1;
-                            break;
-                        }
-                        None => panic!("channel disconnected unexpectedly"),
+                match rx.recv() {
+                    Some(v) => {
+                        assert_eq!(v, expected);
+                        received += 1;
                     }
+                    None => panic!("channel disconnected unexpectedly"),
                 }
             }
             received

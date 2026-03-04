@@ -41,7 +41,7 @@ use super::CachePadded;
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::buffer::RingBuffer;
+/// use sensor_bridge::buffer::RingBuffer;
 ///
 /// let buffer: RingBuffer<u32, 16> = RingBuffer::new();
 /// let (producer, consumer) = buffer.split();
@@ -69,7 +69,10 @@ pub struct RingBuffer<T, const N: usize> {
 
 // Compile-time assertion that N is a power of 2
 const fn assert_power_of_two<const N: usize>() {
-    assert!(N > 0 && (N & (N - 1)) == 0, "Buffer size must be a power of 2");
+    assert!(
+        N > 0 && (N & (N - 1)) == 0,
+        "Buffer size must be a power of 2"
+    );
 }
 
 impl<T, const N: usize> RingBuffer<T, N> {
@@ -159,10 +162,7 @@ impl<T, const N: usize> RingBuffer<T, N> {
     /// - Consumer only reads and updates tail
     #[must_use]
     pub fn split(&self) -> (Producer<'_, T, N>, Consumer<'_, T, N>) {
-        (
-            Producer { buffer: self },
-            Consumer { buffer: self },
-        )
+        (Producer { buffer: self }, Consumer { buffer: self })
     }
 
     /// Pushes a value into the buffer.
@@ -286,8 +286,10 @@ impl<T, const N: usize> Drop for RingBuffer<T, N> {
 // - After transfer, it must be split into Producer/Consumer for use
 unsafe impl<T: Send, const N: usize> Send for RingBuffer<T, N> {}
 
-// NOTE: RingBuffer is NOT Sync because multiple threads cannot safely
-// call push/pop on the same instance. Use split() to get thread-safe handles.
+// SAFETY: RingBuffer<T, N> is Sync when T: Send because all mutable state is
+// guarded by acquire-release atomic operations on the head/tail indices.
+// The SPSC invariant (one producer, one consumer) is enforced by the split() API.
+unsafe impl<T: Send, const N: usize> Sync for RingBuffer<T, N> {}
 
 /// Producer handle for the ring buffer.
 ///
@@ -505,7 +507,7 @@ mod tests {
         static DROP_COUNT: AtomicUsize = AtomicUsize::new(0);
 
         #[derive(Clone, Debug)]
-        struct DropCounter(Arc<()>);
+        struct DropCounter(#[allow(dead_code)] Arc<()>);
 
         impl Drop for DropCounter {
             fn drop(&mut self) {

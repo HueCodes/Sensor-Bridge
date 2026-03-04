@@ -6,14 +6,14 @@
 //!
 //! # Channel Types
 //!
-//! - [`BoundedChannel`]: Fixed-size channel with backpressure
-//! - [`UnboundedChannel`]: Unbounded channel for best-effort stages
+//! - **Bounded** ([`bounded`]): Fixed-size channel with backpressure
+//! - **Unbounded** ([`unbounded`]): Unbounded channel for best-effort stages
 //! - [`StageChannel`]: Wrapper with metrics and backpressure handling
 //!
 //! # Example
 //!
 //! ```rust
-//! use sensor_pipeline::channel::{bounded, StageChannel};
+//! use sensor_bridge::channel::{bounded, StageChannel};
 //!
 //! let (tx, rx) = bounded::<u32>(1024);
 //! tx.send(42).unwrap();
@@ -21,15 +21,15 @@
 //! ```
 
 mod metrics;
-mod sender;
 mod receiver;
+mod sender;
 
 pub use metrics::ChannelMetrics;
-pub use sender::Sender;
 pub use receiver::Receiver;
+pub use sender::Sender;
 
-use std::sync::Arc;
 use crossbeam::channel::{self};
+use std::sync::Arc;
 
 /// Creates a bounded channel with the specified capacity.
 ///
@@ -40,7 +40,7 @@ use crossbeam::channel::{self};
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::channel::bounded;
+/// use sensor_bridge::channel::bounded;
 ///
 /// let (tx, rx) = bounded::<i32>(100);
 /// tx.send(1).unwrap();
@@ -65,7 +65,7 @@ pub fn bounded<T>(capacity: usize) -> (Sender<T>, Receiver<T>) {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::channel::unbounded;
+/// use sensor_bridge::channel::unbounded;
 ///
 /// let (tx, rx) = unbounded::<i32>();
 /// tx.send(1).unwrap();
@@ -164,7 +164,6 @@ pub enum RecvError {
 mod tests {
     use super::*;
     use std::thread;
-    
 
     #[test]
     fn test_bounded_channel_basic() {

@@ -34,7 +34,7 @@ pub const CACHE_LINE_SIZE: usize = 128;
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::buffer::CachePadded;
+/// use sensor_bridge::buffer::CachePadded;
 /// use core::sync::atomic::{AtomicUsize, Ordering};
 ///
 /// struct SharedCounters {
@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn test_clone() {
         let original = CachePadded::new(42u64);
-        let cloned = original.clone();
+        let cloned = original; // Copy type - cloned via copy semantics
         assert_eq!(*original, *cloned);
     }
 }

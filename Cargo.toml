@@ -1,16 +1,20 @@
 [package]
-name = "sensor-pipeline"
+name = "sensor-bridge"
 version = "0.1.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
+rust-version = "1.75"
+authors = ["huecodes"]
 description = "A real-time sensor data pipeline with lock-free data structures for robotics applications"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/sensor-pipeline"
+repository = "https://github.com/huecodes/sensor-bridge"
+homepage = "https://github.com/huecodes/sensor-bridge"
+documentation = "https://docs.rs/sensor-bridge"
 keywords = ["robotics", "real-time", "sensor", "lock-free", "pipeline"]
 categories = ["embedded", "concurrency", "science::robotics"]
+exclude = ["PRODUCTIONIZE.md", ".github/**", "assets/**"]
 
 [lib]
-name = "sensor_pipeline"
+name = "sensor_bridge"
 path = "src/lib.rs"
 
 [features]
@@ -78,6 +82,10 @@ path = "tests/integration.rs"
 [[test]]
 name = "stress_tests"
 path = "tests/stress_tests.rs"
+
+# Tell Cargo that cfg(loom) is expected (set via RUSTFLAGS="--cfg loom" when running loom tests)
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }
 
 [profile.release]
 lto = true

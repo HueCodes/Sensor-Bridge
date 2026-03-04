@@ -33,7 +33,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::metrics::JitterTracker;
+/// use sensor_bridge::metrics::JitterTracker;
 ///
 /// let tracker = JitterTracker::new();
 ///
@@ -383,7 +383,11 @@ mod tests {
         }
 
         assert_eq!(tracker.count(), 8);
-        assert!((tracker.mean() - 5.0).abs() < 0.01, "mean = {}", tracker.mean());
+        assert!(
+            (tracker.mean() - 5.0).abs() < 0.01,
+            "mean = {}",
+            tracker.mean()
+        );
         assert!(
             (tracker.variance() - 4.571).abs() < 0.1,
             "variance = {}",
@@ -471,11 +475,7 @@ mod tests {
 
         assert_eq!(tracker.count(), 3);
         let mean = tracker.mean();
-        assert!(
-            (mean - 1_000_000.0).abs() < 1000.0,
-            "mean = {}",
-            mean
-        );
+        assert!((mean - 1_000_000.0).abs() < 1000.0, "mean = {}", mean);
     }
 
     #[cfg(feature = "std")]

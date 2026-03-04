@@ -21,7 +21,7 @@ use core::marker::PhantomData;
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::stage::Stage;
+/// use sensor_bridge::stage::Stage;
 ///
 /// struct Doubler;
 ///
@@ -85,7 +85,7 @@ pub trait Stage: Send {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::stage::{Stage, Chain, Map};
+/// use sensor_bridge::stage::{Stage, Chain, Map};
 ///
 /// let double = Map::new(|x: i32| x * 2);
 /// let add_one = Map::new(|x: i32| x + 1);
@@ -137,7 +137,9 @@ where
 
     #[inline]
     fn process(&mut self, input: Self::Input) -> Option<Self::Output> {
-        self.first.process(input).and_then(|mid| self.second.process(mid))
+        self.first
+            .process(input)
+            .and_then(|mid| self.second.process(mid))
     }
 
     fn tick(&mut self) -> Option<Self::Output> {
@@ -470,11 +472,9 @@ mod tests {
 
     #[test]
     fn test_stage_ext() {
-        let mut pipeline = Map::new(|x: i32| x * 2)
-            .filter(|x| *x > 5)
-            .map(|x| x + 1);
+        let mut pipeline = Map::new(|x: i32| x * 2).filter(|x| *x > 5).map(|x| x + 1);
 
-        assert_eq!(pipeline.process(1), None);   // 2, filtered
+        assert_eq!(pipeline.process(1), None); // 2, filtered
         assert_eq!(pipeline.process(3), Some(7)); // 6 + 1
         assert_eq!(pipeline.process(5), Some(11)); // 10 + 1
     }

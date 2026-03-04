@@ -13,7 +13,7 @@
 //! Stages can be composed using the [`Chain`] combinator or the [`StageExt`] trait:
 //!
 //! ```rust
-//! use sensor_pipeline::stage::{Stage, StageExt, Map, Filter};
+//! use sensor_bridge::stage::{Stage, StageExt, Map, Filter};
 //!
 //! let mut pipeline = Map::new(|x: i32| x * 2)
 //!     .filter(|x| *x > 10)

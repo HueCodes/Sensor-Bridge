@@ -112,9 +112,7 @@ impl StageControl {
         match cmd {
             StageCommand::Shutdown => self.shutdown.store(true, Ordering::Release),
             StageCommand::Pause => self.paused.store(true, Ordering::Release),
-            StageCommand::Resume | StageCommand::Run => {
-                self.paused.store(false, Ordering::Release)
-            }
+            StageCommand::Resume | StageCommand::Run => self.paused.store(false, Ordering::Release),
             StageCommand::Reset => {}
         }
     }
@@ -285,7 +283,7 @@ where
     /// the thread panicked.
     pub fn join(&mut self) -> Result<(), Box<dyn std::any::Any + Send>> {
         if let Some(thread) = self.thread.take() {
-            thread.join().map_err(|e| e)
+            thread.join()
         } else {
             Ok(())
         }

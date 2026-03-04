@@ -20,8 +20,8 @@ use core::sync::atomic::{AtomicU64, Ordering};
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::timestamp::{Timestamped, MonotonicClock};
-/// use sensor_pipeline::sensor::ImuReading;
+/// use sensor_bridge::timestamp::{Timestamped, MonotonicClock};
+/// use sensor_bridge::sensor::ImuReading;
 ///
 /// let clock = MonotonicClock::new();
 /// let reading = ImuReading::default();
@@ -93,11 +93,7 @@ impl<T> Timestamped<T> {
     #[inline]
     #[must_use]
     pub const fn dropped_since(&self, expected_seq: u64) -> u64 {
-        if self.seq > expected_seq {
-            self.seq - expected_seq
-        } else {
-            0
-        }
+        self.seq.saturating_sub(expected_seq)
     }
 }
 
@@ -125,7 +121,7 @@ impl<T: Default> Default for Timestamped<T> {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::timestamp::MonotonicClock;
+/// use sensor_bridge::timestamp::MonotonicClock;
 ///
 /// let clock = MonotonicClock::new();
 /// let t1 = clock.now_ns();
@@ -302,8 +298,7 @@ pub const fn timestamp_diff(earlier: u64, later: u64) -> Option<u64> {
 #[inline]
 #[must_use]
 pub const fn timestamps_within_tolerance(t1: u64, t2: u64, tolerance_ns: u64) -> bool {
-    let diff = if t1 >= t2 { t1 - t2 } else { t2 - t1 };
-    diff <= tolerance_ns
+    t1.abs_diff(t2) <= tolerance_ns
 }
 
 #[cfg(test)]

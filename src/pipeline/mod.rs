@@ -8,7 +8,7 @@
 //! # Building a Pipeline
 //!
 //! ```rust
-//! use sensor_pipeline::pipeline::PipelineBuilder;
+//! use sensor_bridge::pipeline::PipelineBuilder;
 //!
 //! let pipeline = PipelineBuilder::new()
 //!     .map(|x: i32| x * 2)
@@ -19,9 +19,9 @@
 //! # Running a Pipeline
 //!
 //! ```rust
-//! use sensor_pipeline::buffer::RingBuffer;
-//! use sensor_pipeline::pipeline::{PipelineBuilder, PipelineRunner};
-//! use sensor_pipeline::stage::Map;
+//! use sensor_bridge::buffer::RingBuffer;
+//! use sensor_bridge::pipeline::{PipelineBuilder, PipelineRunner};
+//! use sensor_bridge::stage::Map;
 //!
 //! let buffer: RingBuffer<i32, 16> = RingBuffer::new();
 //! let (producer, consumer) = buffer.split();
@@ -60,8 +60,8 @@ pub use executor::{StageMetrics, StageMetricsSnapshot, WorkerConfig};
 
 #[cfg(feature = "std")]
 pub use multi_stage::{
-    MultiStagePipeline, MultiStagePipelineBuilder, PipelineConfig,
-    PipelineState, SimplePipelineBuilder,
+    MultiStagePipeline, MultiStagePipelineBuilder, PipelineConfig, PipelineState,
+    SimplePipelineBuilder,
 };
 
 #[cfg(feature = "std")]

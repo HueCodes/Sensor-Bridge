@@ -10,7 +10,7 @@ use crate::stage::{Chain, Filter, FilterMap, Inspect, Map, Stage};
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::pipeline::PipelineBuilder;
+/// use sensor_bridge::pipeline::PipelineBuilder;
 ///
 /// let pipeline = PipelineBuilder::new()
 ///     .map(|x: i32| x * 2)
@@ -192,7 +192,10 @@ impl PipelineConfig {
     /// Sets the buffer size.
     #[must_use]
     pub fn with_buffer_size(mut self, size: usize) -> Self {
-        assert!(size > 0 && (size & (size - 1)) == 0, "Buffer size must be power of 2");
+        assert!(
+            size > 0 && (size & (size - 1)) == 0,
+            "Buffer size must be power of 2"
+        );
         self.buffer_size = size;
         self
     }

@@ -75,7 +75,8 @@ impl StageMetrics {
     #[inline]
     pub fn record_latency(&self, latency_ns: u64) {
         self.latency.record(latency_ns);
-        self.total_processing_ns.fetch_add(latency_ns, Ordering::Relaxed);
+        self.total_processing_ns
+            .fetch_add(latency_ns, Ordering::Relaxed);
         self.last_processing_ns.store(latency_ns, Ordering::Relaxed);
     }
 
@@ -367,6 +368,7 @@ impl WorkerConfig {
 /// A batch-processing stage worker for higher throughput.
 ///
 /// Collects items into batches before processing to reduce per-item overhead.
+#[allow(dead_code)]
 pub fn batch_stage_worker<S>(
     mut stage: S,
     input: Receiver<S::Input>,

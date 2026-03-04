@@ -74,6 +74,7 @@ impl RotationMatrix {
 
     /// Multiplies this matrix by another.
     #[must_use]
+    #[allow(clippy::needless_range_loop)]
     pub fn multiply(&self, other: &Self) -> Self {
         let mut result = [[0.0f32; 3]; 3];
         for i in 0..3 {

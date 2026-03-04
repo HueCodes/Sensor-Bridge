@@ -20,7 +20,7 @@ use std::sync::Arc;
 /// # Example
 ///
 /// ```rust,ignore
-/// use sensor_pipeline::buffer::{RingBuffer, OwnedProducer, OwnedConsumer};
+/// use sensor_bridge::buffer::{RingBuffer, OwnedProducer, OwnedConsumer};
 /// use std::sync::Arc;
 ///
 /// let buffer = Arc::new(RingBuffer::<u32, 1024>::new());
@@ -155,7 +155,7 @@ impl<T, const N: usize> RingBuffer<T, N> {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use sensor_pipeline::buffer::RingBuffer;
+    /// use sensor_bridge::buffer::RingBuffer;
     /// use std::sync::Arc;
     ///
     /// let buffer = Arc::new(RingBuffer::<u32, 1024>::new());

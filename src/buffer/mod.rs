@@ -13,7 +13,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use sensor_pipeline::buffer::{RingBuffer, CachePadded};
+//! use sensor_bridge::buffer::{RingBuffer, CachePadded};
 //!
 //! // Create a buffer for 1024 elements
 //! let buffer: RingBuffer<u32, 1024> = RingBuffer::new();

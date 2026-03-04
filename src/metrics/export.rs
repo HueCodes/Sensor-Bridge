@@ -28,27 +28,60 @@ impl MetricsExporter {
         let mut json = String::from("{\n");
 
         // Summary
-        json.push_str(&format!("  \"throughput\": {:.2},\n", snapshot.throughput()));
+        json.push_str(&format!(
+            "  \"throughput\": {:.2},\n",
+            snapshot.throughput()
+        ));
         json.push_str(&format!("  \"total_input\": {},\n", snapshot.total_input));
         json.push_str(&format!("  \"total_output\": {},\n", snapshot.total_output));
         json.push_str(&format!("  \"drop_rate\": {:.4},\n", snapshot.drop_rate()));
-        json.push_str(&format!("  \"elapsed_secs\": {:.3},\n", snapshot.elapsed_secs));
+        json.push_str(&format!(
+            "  \"elapsed_secs\": {:.3},\n",
+            snapshot.elapsed_secs
+        ));
 
         // End-to-end latency
         json.push_str("  \"end_to_end_latency\": {\n");
-        json.push_str(&format!("    \"count\": {},\n", snapshot.end_to_end_latency.count));
-        json.push_str(&format!("    \"mean_ns\": {:.2},\n", snapshot.end_to_end_latency.mean_ns));
-        json.push_str(&format!("    \"p50_ns\": {},\n", snapshot.end_to_end_latency.p50_ns));
-        json.push_str(&format!("    \"p95_ns\": {},\n", snapshot.end_to_end_latency.p95_ns));
-        json.push_str(&format!("    \"p99_ns\": {},\n", snapshot.end_to_end_latency.p99_ns));
-        json.push_str(&format!("    \"p999_ns\": {}\n", snapshot.end_to_end_latency.p999_ns));
+        json.push_str(&format!(
+            "    \"count\": {},\n",
+            snapshot.end_to_end_latency.count
+        ));
+        json.push_str(&format!(
+            "    \"mean_ns\": {:.2},\n",
+            snapshot.end_to_end_latency.mean_ns
+        ));
+        json.push_str(&format!(
+            "    \"p50_ns\": {},\n",
+            snapshot.end_to_end_latency.p50_ns
+        ));
+        json.push_str(&format!(
+            "    \"p95_ns\": {},\n",
+            snapshot.end_to_end_latency.p95_ns
+        ));
+        json.push_str(&format!(
+            "    \"p99_ns\": {},\n",
+            snapshot.end_to_end_latency.p99_ns
+        ));
+        json.push_str(&format!(
+            "    \"p999_ns\": {}\n",
+            snapshot.end_to_end_latency.p999_ns
+        ));
         json.push_str("  },\n");
 
         // End-to-end jitter
         json.push_str("  \"end_to_end_jitter\": {\n");
-        json.push_str(&format!("    \"count\": {},\n", snapshot.end_to_end_jitter.count));
-        json.push_str(&format!("    \"mean_ns\": {:.2},\n", snapshot.end_to_end_jitter.mean_ns));
-        json.push_str(&format!("    \"std_dev_ns\": {:.2}\n", snapshot.end_to_end_jitter.std_dev_ns));
+        json.push_str(&format!(
+            "    \"count\": {},\n",
+            snapshot.end_to_end_jitter.count
+        ));
+        json.push_str(&format!(
+            "    \"mean_ns\": {:.2},\n",
+            snapshot.end_to_end_jitter.mean_ns
+        ));
+        json.push_str(&format!(
+            "    \"std_dev_ns\": {:.2}\n",
+            snapshot.end_to_end_jitter.std_dev_ns
+        ));
         json.push_str("  },\n");
 
         // Stages
@@ -66,17 +99,35 @@ impl MetricsExporter {
         let mut json = String::from("    {\n");
         json.push_str(&format!("      \"name\": \"{}\",\n", stage.name));
         json.push_str(&format!("      \"input_count\": {},\n", stage.input_count));
-        json.push_str(&format!("      \"output_count\": {},\n", stage.output_count));
-        json.push_str(&format!("      \"filtered_count\": {},\n", stage.filtered_count));
-        json.push_str(&format!("      \"dropped_count\": {},\n", stage.dropped_count));
+        json.push_str(&format!(
+            "      \"output_count\": {},\n",
+            stage.output_count
+        ));
+        json.push_str(&format!(
+            "      \"filtered_count\": {},\n",
+            stage.filtered_count
+        ));
+        json.push_str(&format!(
+            "      \"dropped_count\": {},\n",
+            stage.dropped_count
+        ));
         json.push_str(&format!("      \"error_count\": {},\n", stage.error_count));
-        json.push_str(&format!("      \"throughput_ratio\": {:.4},\n", stage.throughput_ratio()));
+        json.push_str(&format!(
+            "      \"throughput_ratio\": {:.4},\n",
+            stage.throughput_ratio()
+        ));
         json.push_str("      \"latency\": {\n");
-        json.push_str(&format!("        \"mean_ns\": {:.2},\n", stage.latency.mean_ns));
+        json.push_str(&format!(
+            "        \"mean_ns\": {:.2},\n",
+            stage.latency.mean_ns
+        ));
         json.push_str(&format!("        \"p99_ns\": {}\n", stage.latency.p99_ns));
         json.push_str("      },\n");
         json.push_str("      \"jitter\": {\n");
-        json.push_str(&format!("        \"std_dev_ns\": {:.2}\n", stage.jitter.std_dev_ns));
+        json.push_str(&format!(
+            "        \"std_dev_ns\": {:.2}\n",
+            stage.jitter.std_dev_ns
+        ));
         json.push_str("      }\n");
         json.push_str("    }");
         if !is_last {
@@ -328,13 +379,26 @@ impl SummaryStatistics {
 impl std::fmt::Display for SummaryStatistics {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Summary Statistics ({} snapshots):", self.count)?;
-        writeln!(f, "  Throughput: avg={:.1}, min={:.1}, max={:.1} items/sec",
-            self.avg_throughput, self.min_throughput, self.max_throughput)?;
-        writeln!(f, "  P99 Latency: avg={:.1}us, max={:.1}us",
-            self.avg_p99_latency_us, self.max_p99_latency_us)?;
-        writeln!(f, "  Jitter: avg={:.2}ms, max={:.2}ms",
-            self.avg_jitter_ms, self.max_jitter_ms)?;
-        writeln!(f, "  Overall Drop Rate: {:.2}%", self.overall_drop_rate * 100.0)
+        writeln!(
+            f,
+            "  Throughput: avg={:.1}, min={:.1}, max={:.1} items/sec",
+            self.avg_throughput, self.min_throughput, self.max_throughput
+        )?;
+        writeln!(
+            f,
+            "  P99 Latency: avg={:.1}us, max={:.1}us",
+            self.avg_p99_latency_us, self.max_p99_latency_us
+        )?;
+        writeln!(
+            f,
+            "  Jitter: avg={:.2}ms, max={:.2}ms",
+            self.avg_jitter_ms, self.max_jitter_ms
+        )?;
+        writeln!(
+            f,
+            "  Overall Drop Rate: {:.2}%",
+            self.overall_drop_rate * 100.0
+        )
     }
 }
 
@@ -346,35 +410,33 @@ mod tests {
 
     fn make_snapshot() -> PipelineMetricsSnapshot {
         PipelineMetricsSnapshot {
-            stages: vec![
-                StageMetricsSnapshot {
-                    name: "stage1".to_string(),
-                    input_count: 100,
-                    output_count: 90,
-                    filtered_count: 5,
-                    dropped_count: 5,
-                    error_count: 0,
-                    latency: LatencySnapshot {
-                        count: 100,
-                        mean_ns: 1000.0,
-                        min_ns: Some(500),
-                        max_ns: Some(2000),
-                        p50_ns: 1000,
-                        p95_ns: 1500,
-                        p99_ns: 1800,
-                        p999_ns: 1950,
-                    },
-                    jitter: JitterSnapshot {
-                        count: 100,
-                        mean_ns: 1000.0,
-                        std_dev_ns: 200.0,
-                        min_ns: Some(500),
-                        max_ns: Some(2000),
-                    },
-                    bytes_processed: 1000,
-                    elapsed_secs: 1.0,
+            stages: vec![StageMetricsSnapshot {
+                name: "stage1".to_string(),
+                input_count: 100,
+                output_count: 90,
+                filtered_count: 5,
+                dropped_count: 5,
+                error_count: 0,
+                latency: LatencySnapshot {
+                    count: 100,
+                    mean_ns: 1000.0,
+                    min_ns: Some(500),
+                    max_ns: Some(2000),
+                    p50_ns: 1000,
+                    p95_ns: 1500,
+                    p99_ns: 1800,
+                    p999_ns: 1950,
                 },
-            ],
+                jitter: JitterSnapshot {
+                    count: 100,
+                    mean_ns: 1000.0,
+                    std_dev_ns: 200.0,
+                    min_ns: Some(500),
+                    max_ns: Some(2000),
+                },
+                bytes_processed: 1000,
+                elapsed_secs: 1.0,
+            }],
             end_to_end_latency: LatencySnapshot {
                 count: 100,
                 mean_ns: 5000.0,

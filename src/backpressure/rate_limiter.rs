@@ -68,7 +68,7 @@ impl RateLimiterConfig {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::backpressure::{RateLimiter, RateLimiterConfig};
+/// use sensor_bridge::backpressure::{RateLimiter, RateLimiterConfig};
 ///
 /// // 1000 items per second with burst of 100
 /// let limiter = RateLimiter::new(RateLimiterConfig::new(1000.0).capacity(100));
@@ -195,9 +195,11 @@ impl RateLimiter {
         let max_tokens_fp = self.config.capacity.saturating_mul(Self::FP_SCALE);
 
         // Add tokens, clamping to capacity
-        let _ = self.tokens_fp.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
-            Some(current.saturating_add(tokens_to_add_fp).min(max_tokens_fp))
-        });
+        let _ = self
+            .tokens_fp
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                Some(current.saturating_add(tokens_to_add_fp).min(max_tokens_fp))
+            });
     }
 
     /// Returns the current number of available tokens.

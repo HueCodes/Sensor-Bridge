@@ -347,7 +347,10 @@ mod tests {
             producer.push(i).unwrap();
         }
 
-        let stage = Chain::new(Filter::new(|x: &i32| *x % 2 == 0), Map::new(|x: i32| x * 10));
+        let stage = Chain::new(
+            Filter::new(|x: &i32| *x % 2 == 0),
+            Map::new(|x: i32| x * 10),
+        );
 
         let mut runner = PipelineRunner::new(consumer, stage);
         let mut outputs = Vec::new();

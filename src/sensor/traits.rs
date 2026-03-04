@@ -14,9 +14,9 @@ use crate::timestamp::Timestamped;
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::sensor::{Sensor, ImuReading};
-/// use sensor_pipeline::timestamp::Timestamped;
-/// use sensor_pipeline::error::Result;
+/// use sensor_bridge::sensor::{Sensor, ImuReading};
+/// use sensor_bridge::timestamp::Timestamped;
+/// use sensor_bridge::error::Result;
 ///
 /// struct MyImu {
 ///     // hardware handle
@@ -132,9 +132,9 @@ pub trait CalibratableSensor: Sensor {
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::sensor::{FnSensor, Sensor};
-/// use sensor_pipeline::timestamp::{Timestamped, MonotonicClock};
-/// use sensor_pipeline::error::Result;
+/// use sensor_bridge::sensor::{FnSensor, Sensor};
+/// use sensor_bridge::timestamp::{Timestamped, MonotonicClock};
+/// use sensor_bridge::error::Result;
 ///
 /// let clock = MonotonicClock::new();
 /// let mut counter = 0u64;
@@ -207,7 +207,11 @@ impl SensorInfo {
     /// Creates new sensor info with the given name and type.
     #[cfg(feature = "std")]
     #[must_use]
-    pub fn new(name: impl Into<String>, sensor_type: impl Into<String>, sample_rate_hz: f64) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        sensor_type: impl Into<String>,
+        sample_rate_hz: f64,
+    ) -> Self {
         Self {
             name: name.into(),
             sample_rate_hz,

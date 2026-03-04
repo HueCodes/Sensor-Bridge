@@ -45,13 +45,11 @@ impl<T: Copy, const CAPACITY: usize> TimestampBuffer<T, CAPACITY> {
         let mut best: Option<&Timestamped<T>> = None;
         let mut best_diff = u64::MAX;
 
-        for slot in &self.buffer {
-            if let Some(ref item) = slot {
-                let diff = target_ns.abs_diff(item.timestamp_ns);
-                if diff <= tolerance_ns && diff < best_diff {
-                    best_diff = diff;
-                    best = Some(item);
-                }
+        for item in self.buffer.iter().flatten() {
+            let diff = target_ns.abs_diff(item.timestamp_ns);
+            if diff <= tolerance_ns && diff < best_diff {
+                best_diff = diff;
+                best = Some(item);
             }
         }
 
@@ -400,8 +398,12 @@ mod tests {
         let mut sync: TimestampSync<u32, u32, 8> = TimestampSync::with_tolerance_us(100);
 
         // Feed secondary data through stage interface
-        assert!(sync.process(SyncInput::Secondary(Timestamped::new(10, 1000, 0))).is_none());
-        assert!(sync.process(SyncInput::Secondary(Timestamped::new(20, 2000, 1))).is_none());
+        assert!(sync
+            .process(SyncInput::Secondary(Timestamped::new(10, 1000, 0)))
+            .is_none());
+        assert!(sync
+            .process(SyncInput::Secondary(Timestamped::new(20, 2000, 1)))
+            .is_none());
 
         // Feed primary data
         let result = sync.process(SyncInput::Primary(Timestamped::new(100, 1050, 0)));

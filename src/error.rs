@@ -1,4 +1,14 @@
 //! Error types for the sensor pipeline.
+//!
+//! # Overview
+//!
+//! This module defines the error hierarchy used throughout sensor-bridge:
+//!
+//! - [`PipelineError`]: Top-level error type returned by most pipeline operations
+//! - [`SensorError`]: Errors originating from individual sensor drivers
+//!
+//! Both types implement [`std::error::Error`] when the `std` feature is enabled,
+//! and [`core::fmt::Display`] unconditionally for `no_std` compatibility.
 
 use core::fmt;
 

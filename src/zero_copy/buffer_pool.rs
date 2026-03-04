@@ -139,13 +139,19 @@ impl BufferPool {
     /// Pre-allocates buffers in each pool.
     pub fn prefill(self: &Arc<Self>, small: usize, medium: usize, large: usize) {
         for _ in 0..small.min(self.pool_size) {
-            let _ = self.small.push(Vec::with_capacity(BufferSize::Small.bytes()));
+            let _ = self
+                .small
+                .push(Vec::with_capacity(BufferSize::Small.bytes()));
         }
         for _ in 0..medium.min(self.pool_size) {
-            let _ = self.medium.push(Vec::with_capacity(BufferSize::Medium.bytes()));
+            let _ = self
+                .medium
+                .push(Vec::with_capacity(BufferSize::Medium.bytes()));
         }
         for _ in 0..large.min(self.pool_size) {
-            let _ = self.large.push(Vec::with_capacity(BufferSize::Large.bytes()));
+            let _ = self
+                .large
+                .push(Vec::with_capacity(BufferSize::Large.bytes()));
         }
     }
 
@@ -284,7 +290,10 @@ impl Drop for PooledBuffer {
 
 impl std::io::Write for PooledBuffer {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.buffer.as_mut().expect("buffer already taken").extend_from_slice(buf);
+        self.buffer
+            .as_mut()
+            .expect("buffer already taken")
+            .extend_from_slice(buf);
         Ok(buf.len())
     }
 
@@ -469,7 +478,7 @@ mod tests {
         let pool = BufferPool::new(10);
         let mut buf = pool.acquire(100);
 
-        write!(buf, "Hello, {}!", "world").unwrap();
+        write!(buf, "Hello, world!").unwrap();
         assert_eq!(&*buf, b"Hello, world!");
     }
 }

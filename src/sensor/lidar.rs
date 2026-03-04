@@ -146,7 +146,7 @@ impl LidarScan2D {
             num_points,
             0.0,
             core::f32::consts::TAU, // 2π
-            0.05,                    // 5cm minimum
+            0.05,                   // 5cm minimum
             range_max,
         )
     }

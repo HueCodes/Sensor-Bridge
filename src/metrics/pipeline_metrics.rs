@@ -212,7 +212,11 @@ impl std::fmt::Display for PipelineMetricsSnapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Pipeline Metrics:")?;
         writeln!(f, "  Throughput: {:.1} items/sec", self.throughput())?;
-        writeln!(f, "  Total: {} in, {} out", self.total_input, self.total_output)?;
+        writeln!(
+            f,
+            "  Total: {} in, {} out",
+            self.total_input, self.total_output
+        )?;
         writeln!(f, "  Drop rate: {:.2}%", self.drop_rate() * 100.0)?;
         writeln!(f, "  End-to-end p99: {:.1}us", self.p99_latency_us())?;
         writeln!(f, "  Jitter: {:.2}ms", self.jitter_ms())?;
@@ -240,9 +244,9 @@ pub struct PerformanceTargets {
 impl Default for PerformanceTargets {
     fn default() -> Self {
         Self {
-            min_throughput: 10_000.0,        // 10K items/sec
-            max_p99_latency_us: 10_000.0,    // 10ms = 10,000us
-            max_jitter_ms: 2.0,              // 2ms std dev
+            min_throughput: 10_000.0,     // 10K items/sec
+            max_p99_latency_us: 10_000.0, // 10ms = 10,000us
+            max_jitter_ms: 2.0,           // 2ms std dev
         }
     }
 }

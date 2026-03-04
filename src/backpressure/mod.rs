@@ -9,7 +9,7 @@
 //! # Example
 //!
 //! ```rust,ignore
-//! use sensor_pipeline::backpressure::{AdaptiveController, BackpressureStrategy};
+//! use sensor_bridge::backpressure::{AdaptiveController, BackpressureStrategy};
 //!
 //! let controller = AdaptiveController::new()
 //!     .high_water_mark(0.8)
@@ -24,10 +24,10 @@
 //! }
 //! ```
 
-mod strategy;
 mod controller;
 mod rate_limiter;
+mod strategy;
 
-pub use strategy::BackpressureStrategy;
 pub use controller::{AdaptiveController, AdaptiveControllerBuilder, QualityLevel};
 pub use rate_limiter::{RateLimiter, RateLimiterConfig};
+pub use strategy::BackpressureStrategy;

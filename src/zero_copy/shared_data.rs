@@ -15,7 +15,7 @@ use std::sync::Arc;
 /// # Example
 ///
 /// ```rust
-/// use sensor_pipeline::zero_copy::SharedData;
+/// use sensor_bridge::zero_copy::SharedData;
 ///
 /// // Create shared data
 /// let data = SharedData::new(vec![1, 2, 3, 4, 5]);
@@ -98,8 +98,7 @@ impl<T> SharedData<T> {
     /// or `Err(Self)` if there are other references.
     #[inline]
     pub fn try_unwrap(self) -> Result<T, Self> {
-        Arc::try_unwrap(self.inner)
-            .map_err(|inner| Self { inner })
+        Arc::try_unwrap(self.inner).map_err(|inner| Self { inner })
     }
 
     /// Maps the shared data to a new type.
@@ -184,6 +183,7 @@ unsafe impl<T: Send + Sync> Sync for SharedData<T> {}
 /// A timestamped shared data wrapper.
 ///
 /// Combines shared data with a timestamp for sensor readings.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct TimestampedShared<T> {
     /// The shared data.
@@ -192,6 +192,7 @@ pub struct TimestampedShared<T> {
     pub timestamp_ns: u64,
 }
 
+#[allow(dead_code)]
 impl<T> TimestampedShared<T> {
     /// Creates new timestamped shared data.
     #[inline]
