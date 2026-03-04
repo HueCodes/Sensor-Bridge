@@ -1,0 +1,46 @@
+digraph SensorBridge {
+    rankdir=LR;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    labelloc="t";
+    label="Sensor-Bridge: 4-Stage Lock-Free Pipeline";
+    fontsize=14;
+
+    // Input
+    Sensors [label="Sensor Data\nIMU / LiDAR", fillcolor="#e3f2fd", shape=ellipse];
+
+    // Stages
+    subgraph cluster_pipeline {
+        label="";
+        style=invis;
+
+        S1 [label="Stage 1\nIngestion\n[Thread 1]", fillcolor="#c8e6c9"];
+        B1 [label="SPSC\nRingBuffer", fillcolor="#fff9c4", shape=cylinder, width=0.8];
+        S2 [label="Stage 2\nFiltering\n[Thread 2]", fillcolor="#c8e6c9"];
+        B2 [label="SPSC\nRingBuffer", fillcolor="#fff9c4", shape=cylinder, width=0.8];
+        S3 [label="Stage 3\nAggregation\n[Thread 3]", fillcolor="#c8e6c9"];
+        B3 [label="SPSC\nRingBuffer", fillcolor="#fff9c4", shape=cylinder, width=0.8];
+        S4 [label="Stage 4\nOutput\n[Thread 4]", fillcolor="#c8e6c9"];
+    }
+
+    // Output
+    Output [label="Processed\nResults", fillcolor="#e3f2fd", shape=ellipse];
+
+    // Metrics
+    Metrics [label="Metrics\n~20ns latency\n2.2B items/sec", fillcolor="#f8bbd9", shape=note];
+
+    // Flow
+    Sensors -> S1 [label="push"];
+    S1 -> B1 [label="lock-free"];
+    B1 -> S2 [label="pop"];
+    S2 -> B2;
+    B2 -> S3;
+    S3 -> B3;
+    B3 -> S4;
+    S4 -> Output;
+
+    S1 -> Metrics [style=dotted, color=gray];
+    S4 -> Metrics [style=dotted, color=gray];
+}
