@@ -8,11 +8,11 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use sensor_pipeline::channel::bounded;
-use sensor_pipeline::pipeline::{MultiStagePipelineBuilder, PipelineConfig};
-use sensor_pipeline::stage::{Identity, Map};
-use sensor_pipeline::backpressure::{AdaptiveController, RateLimiter, RateLimiterConfig};
-use sensor_pipeline::zero_copy::ObjectPool;
+use sensor_bridge::backpressure::{AdaptiveController, RateLimiter, RateLimiterConfig};
+use sensor_bridge::channel::bounded;
+use sensor_bridge::pipeline::{MultiStagePipelineBuilder, PipelineConfig};
+use sensor_bridge::stage::{Identity, Map};
+use sensor_bridge::zero_copy::ObjectPool;
 
 /// Test sustained high throughput over extended period.
 #[test]
@@ -87,7 +87,7 @@ fn stress_test_sustained_throughput() {
 
     shutdown.store(true, Ordering::Relaxed);
     producer.join().unwrap();
-    
+
     pipeline.shutdown();
     pipeline.join().unwrap();
     consumer.join().unwrap();
@@ -101,7 +101,10 @@ fn stress_test_sustained_throughput() {
     println!("Produced: {}", total_produced);
     println!("Received: {}", total_received);
     println!("Throughput: {:.0} items/sec", throughput);
-    println!("Drop rate: {:.2}%", (1.0 - total_received as f64 / total_produced as f64) * 100.0);
+    println!(
+        "Drop rate: {:.2}%",
+        (1.0 - total_received as f64 / total_produced as f64) * 100.0
+    );
 
     assert!(throughput > 10_000.0, "Throughput too low: {}", throughput);
 }
@@ -110,11 +113,13 @@ fn stress_test_sustained_throughput() {
 #[test]
 #[ignore]
 fn stress_test_overload_graceful_degradation() {
-    let controller = Arc::new(AdaptiveController::builder()
-        .high_water_mark(0.8)
-        .low_water_mark(0.5)
-        .hysteresis_threshold(5)
-        .build());
+    let controller = Arc::new(
+        AdaptiveController::builder()
+            .high_water_mark(0.8)
+            .low_water_mark(0.5)
+            .hysteresis_threshold(5)
+            .build(),
+    );
 
     let mut pipeline = MultiStagePipelineBuilder::<u64, u64, _, _, _, _>::new()
         .config(PipelineConfig::default().channel_capacity(1024))
@@ -144,7 +149,7 @@ fn stress_test_overload_graceful_degradation() {
         while !shutdown_clone.load(Ordering::Relaxed) {
             // Estimate queue utilization
             let utilization = input.len() as f32 / 1024.0;
-            
+
             if controller_clone.should_accept(utilization) {
                 if input.try_send(seq).is_ok() {
                     seq += 1;
@@ -192,7 +197,10 @@ fn stress_test_overload_graceful_degradation() {
     println!("Accepted: {}", total_accepted);
     println!("Rejected by controller: {}", total_rejected);
     println!("Received: {}", total_received);
-    println!("Acceptance rate: {:.1}%", total_accepted as f64 / (total_accepted + total_rejected) as f64 * 100.0);
+    println!(
+        "Acceptance rate: {:.1}%",
+        total_accepted as f64 / (total_accepted + total_rejected) as f64 * 100.0
+    );
     println!("Controller quality: {:?}", controller.quality());
 
     // Under overload, we should have gracefully degraded
@@ -253,7 +261,10 @@ fn stress_test_memory_stability() {
     println!("\n=== Memory Stability Results ===");
     println!("Total iterations: {}", total_iterations);
     println!("Objects created: {}", total_created);
-    println!("Reuse rate: {:.1}%", (1.0 - total_created as f64 / total_iterations as f64) * 100.0);
+    println!(
+        "Reuse rate: {:.1}%",
+        (1.0 - total_created as f64 / total_iterations as f64) * 100.0
+    );
 
     // With 100 pooled objects and 4 threads, should have very few allocations
     // Allow some slack for initial warmup
@@ -368,7 +379,10 @@ fn stress_test_rate_limiter_burst() {
     println!("\n=== Rate Limiter Burst Results ===");
     println!("Acquired: {}", acquired);
     println!("Rejected: {}", rejected);
-    println!("Throughput: {:.0}/sec (target: {:.0}/sec)", throughput, expected_rate);
+    println!(
+        "Throughput: {:.0}/sec (target: {:.0}/sec)",
+        throughput, expected_rate
+    );
     println!("Rate accuracy: {:.1}%", throughput / expected_rate * 100.0);
 
     // Should be within 20% of target rate
