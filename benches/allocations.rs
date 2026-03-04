@@ -5,7 +5,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
 use std::sync::Arc;
 
-use sensor_pipeline::zero_copy::{BufferPool, ObjectPool, SharedData};
+use sensor_bridge::zero_copy::{BufferPool, ObjectPool, SharedData};
 
 /// A typical sensor reading structure.
 #[derive(Clone, Default)]

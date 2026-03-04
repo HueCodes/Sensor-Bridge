@@ -1,7 +1,7 @@
 //! Benchmarks for the sensor pipeline.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
-use sensor_pipeline::{
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use sensor_bridge::{
     buffer::RingBuffer,
     pipeline::{PipelineBuilder, PipelineRunner},
     sensor::{ImuReading, Vec3},
@@ -171,12 +171,74 @@ fn bench_vec3_operations(c: &mut Criterion) {
     group.finish();
 }
 
+/// Compare the overhead of different backpressure strategies when a channel is full.
+///
+/// Each strategy represents a different policy for what to do when the pipeline
+/// is under load: block (wait for space), drop newest (discard the incoming item),
+/// or sample (only accept every Nth item).
+fn bench_backpressure_strategies(c: &mut Criterion) {
+    use sensor_bridge::backpressure::BackpressureStrategy;
+    use sensor_bridge::channel::bounded;
+
+    let mut group = c.benchmark_group("backpressure/strategies");
+    group.throughput(Throughput::Elements(1000));
+
+    let strategies: &[(&str, BackpressureStrategy)] = &[
+        ("drop_newest", BackpressureStrategy::DropNewest),
+        ("drop_oldest", BackpressureStrategy::DropOldest),
+        ("sample_2", BackpressureStrategy::sample(2)),
+        ("sample_4", BackpressureStrategy::sample(4)),
+    ];
+
+    for (name, strategy) in strategies {
+        group.bench_with_input(
+            BenchmarkId::new("send_1000", name),
+            strategy,
+            |b, &strategy| {
+                b.iter(|| {
+                    // A small bounded channel to trigger backpressure quickly
+                    let (tx, _rx) = bounded::<u64>(16);
+                    let mut accepted = 0u64;
+
+                    for i in 0..1000u64 {
+                        match strategy {
+                            BackpressureStrategy::DropNewest => {
+                                if tx.try_send(i).is_ok() {
+                                    accepted += 1;
+                                }
+                            }
+                            BackpressureStrategy::DropOldest => {
+                                // Emulate drop-oldest: if full, drain one then send
+                                if tx.try_send(i).is_err() {
+                                    _rx.try_recv().ok();
+                                    tx.try_send(i).ok();
+                                }
+                                accepted += 1;
+                            }
+                            BackpressureStrategy::Sample { rate } => {
+                                if i % rate as u64 == 0 && tx.try_send(i).is_ok() {
+                                    accepted += 1;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    black_box(accepted)
+                });
+            },
+        );
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_stage_processing,
     bench_pipeline_chain,
     bench_end_to_end_latency,
     bench_vec3_operations,
+    bench_backpressure_strategies,
 );
 
 criterion_main!(benches);

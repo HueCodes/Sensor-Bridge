@@ -1,8 +1,7 @@
 //! Benchmarks for the SPSC ring buffer.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
-use sensor_pipeline::buffer::RingBuffer;
-use std::sync::Arc;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use sensor_bridge::buffer::RingBuffer;
 use std::thread;
 
 fn bench_push_pop_single_thread(c: &mut Criterion) {
@@ -84,11 +83,11 @@ fn bench_push_pop_concurrent(c: &mut Criterion) {
 
 fn bench_buffer_sizes(c: &mut Criterion) {
     let mut group = c.benchmark_group("ring_buffer_sizes");
-    group.throughput(Throughput::Elements(1000));
 
     macro_rules! bench_size {
         ($size:expr) => {
-            group.bench_function(format!("size_{}", $size), |b| {
+            group.throughput(Throughput::Elements(($size / 2) as u64));
+            group.bench_with_input(BenchmarkId::from_parameter($size), &$size, |b, _| {
                 let buffer: RingBuffer<u64, $size> = RingBuffer::new();
                 let (producer, consumer) = buffer.split();
 

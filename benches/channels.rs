@@ -5,7 +5,7 @@
 //! - crossbeam bounded channels
 //! - Our wrapped channels with metrics
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::sync::mpsc;
 use std::thread;
 
@@ -69,13 +69,13 @@ fn bench_crossbeam_bounded(c: &mut Criterion) {
     group.finish();
 }
 
-fn bench_sensor_pipeline_channel(c: &mut Criterion) {
-    let mut group = c.benchmark_group("channels/sensor_pipeline");
+fn bench_sensor_bridge_channel(c: &mut Criterion) {
+    let mut group = c.benchmark_group("channels/sensor_bridge");
     group.throughput(Throughput::Elements(10000));
 
     group.bench_function("send_recv_10k", |b| {
         b.iter(|| {
-            let (tx, rx) = sensor_pipeline::channel::bounded::<u64>(1024);
+            let (tx, rx) = sensor_bridge::channel::bounded::<u64>(1024);
 
             let producer = thread::spawn(move || {
                 for i in 0..10000u64 {
@@ -100,7 +100,7 @@ fn bench_sensor_pipeline_channel(c: &mut Criterion) {
 
     group.bench_function("try_send_recv_10k", |b| {
         b.iter(|| {
-            let (tx, rx) = sensor_pipeline::channel::bounded::<u64>(1024);
+            let (tx, rx) = sensor_bridge::channel::bounded::<u64>(1024);
 
             let producer = thread::spawn(move || {
                 for i in 0..10000u64 {
@@ -144,8 +144,8 @@ fn bench_channel_latency(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("sensor_pipeline_single_item", |b| {
-        let (tx, rx) = sensor_pipeline::channel::bounded::<u64>(1);
+    group.bench_function("sensor_bridge_single_item", |b| {
+        let (tx, rx) = sensor_bridge::channel::bounded::<u64>(1);
 
         b.iter(|| {
             tx.send(42).unwrap();
@@ -158,13 +158,12 @@ fn bench_channel_latency(c: &mut Criterion) {
 
 fn bench_channel_capacity(c: &mut Criterion) {
     let mut group = c.benchmark_group("channels/capacity");
+    group.throughput(Throughput::Elements(10000));
 
-    for capacity in [64, 256, 1024, 4096] {
-        group.throughput(Throughput::Elements(10000));
-
-        group.bench_function(format!("capacity_{}", capacity), |b| {
+    for capacity in [64usize, 256, 1024, 4096] {
+        group.bench_with_input(BenchmarkId::from_parameter(capacity), &capacity, |b, &cap| {
             b.iter(|| {
-                let (tx, rx) = sensor_pipeline::channel::bounded::<u64>(capacity);
+                let (tx, rx) = sensor_bridge::channel::bounded::<u64>(cap);
 
                 let producer = thread::spawn(move || {
                     for i in 0..10000u64 {
@@ -195,7 +194,7 @@ criterion_group!(
     benches,
     bench_std_mpsc,
     bench_crossbeam_bounded,
-    bench_sensor_pipeline_channel,
+    bench_sensor_bridge_channel,
     bench_channel_latency,
     bench_channel_capacity,
 );
