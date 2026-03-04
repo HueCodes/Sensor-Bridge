@@ -1,21 +1,39 @@
-//! Full pipeline example demonstrating the complete sensor processing pipeline.
+//! Full 4-stage pipeline — the production-grade data path for sensor-bridge.
 //!
-//! This example creates a 4-stage pipeline:
-//! 1. Ingestion: Receives raw sensor readings
-//! 2. Filtering: Filters out invalid readings
-//! 3. Aggregation: Computes running statistics
-//! 4. Output: Formats results for display
+//! This example wires up the [`MultiStagePipelineBuilder`], which is the
+//! high-throughput, multi-threaded pipeline for real deployments. Each stage
+//! runs on its own OS thread, connected by bounded `crossbeam` channels.
 //!
-//! Run with: cargo run --example full_pipeline
+//! ## Stages
+//!
+//! 1. **Ingestion** — normalizes raw sensor readings (e.g., unit conversion)
+//! 2. **Filtering** — rejects invalid values (NaN, Inf, out-of-range)
+//! 3. **Aggregation** — maintains running statistics across all readings
+//! 4. **Output** — classifies each reading relative to the running mean
+//!
+//! ## Why bounded channels between stages?
+//!
+//! Bounded channels provide *natural backpressure*: if a downstream stage is
+//! slower than upstream, the channel fills up and the upstream stage blocks.
+//! This propagates pressure back to the producer rather than letting memory
+//! grow without bound. `PipelineConfig::channel_capacity` sets the bound.
+//!
+//! ## Why atomic aggregation state?
+//!
+//! The aggregation closure captures `Arc<AtomicU64>` counters rather than a
+//! `Mutex<f64>`. Atomic fetch-add is a single CPU instruction on x86 and ARM;
+//! a mutex would add lock/unlock overhead on every item in the hot path.
+//!
+//! Run with: `cargo run --example full_pipeline`
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use sensor_pipeline::pipeline::{MultiStagePipelineBuilder, PipelineConfig};
-use sensor_pipeline::stage::{Filter, Map};
-use sensor_pipeline::metrics::PerformanceTargets;
+use sensor_bridge::metrics::PerformanceTargets;
+use sensor_bridge::pipeline::{MultiStagePipelineBuilder, PipelineConfig};
+use sensor_bridge::stage::{Filter, Map};
 
 /// A simulated sensor reading.
 #[derive(Debug, Clone)]
@@ -31,6 +49,7 @@ struct AggregatedStats {
     timestamp_ns: u64,
     sensor_id: u32,
     value: f64,
+    #[allow(dead_code)]
     count: u64,
     mean: f64,
 }
@@ -38,6 +57,7 @@ struct AggregatedStats {
 /// Output record.
 #[derive(Debug, Clone)]
 struct OutputRecord {
+    #[allow(dead_code)]
     timestamp_ns: u64,
     sensor_id: u32,
     value: f64,

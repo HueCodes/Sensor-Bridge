@@ -2,7 +2,7 @@
 //!
 //! Measures end-to-end latency through the pipeline and reports percentiles.
 
-use sensor_pipeline::{
+use sensor_bridge::{
     buffer::RingBuffer,
     metrics::LatencyHistogram,
     pipeline::{PipelineBuilder, PipelineRunner},
@@ -217,7 +217,7 @@ impl LatencyTracker {
     }
 }
 
-impl sensor_pipeline::stage::Stage for LatencyTracker {
+impl sensor_bridge::stage::Stage for LatencyTracker {
     type Input = (u64, f32);
     type Output = (u64, f32);
 

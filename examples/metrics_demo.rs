@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use sensor_pipeline::metrics::{
+use sensor_bridge::metrics::{
     Dashboard, DashboardConfig, PerformanceTargets, PipelineMetricsAggregator,
     StageMetricsCollector, StatusLine,
 };
@@ -120,7 +120,10 @@ fn main() {
     let start = Instant::now();
     let mut update_count = 0;
 
-    println!("Running metrics demo for {} seconds...\n", run_duration.as_secs());
+    println!(
+        "Running metrics demo for {} seconds...\n",
+        run_duration.as_secs()
+    );
     println!("Watch the metrics update in real-time:\n");
 
     while start.elapsed() < run_duration {
@@ -160,7 +163,8 @@ fn main() {
     println!();
 
     println!("Jitter:");
-    println!("  Std Dev: {:.2} us ({:.4} ms)",
+    println!(
+        "  Std Dev: {:.2} us ({:.4} ms)",
         snapshot.end_to_end_jitter.std_dev_us(),
         snapshot.end_to_end_jitter.std_dev_ms()
     );
@@ -183,23 +187,36 @@ fn main() {
     // Check against targets
     let check = snapshot.check_targets(&PerformanceTargets::default());
     println!("Performance Check:");
-    println!("  Throughput: {} ({:.0} items/sec >= 10000)",
+    println!(
+        "  Throughput: {} ({:.0} items/sec >= 10000)",
         if check.throughput_ok { "PASS" } else { "FAIL" },
         check.actual_throughput
     );
-    println!("  Latency:    {} ({:.1}us <= 10000us)",
+    println!(
+        "  Latency:    {} ({:.1}us <= 10000us)",
         if check.latency_ok { "PASS" } else { "FAIL" },
         check.actual_p99_latency_us
     );
-    println!("  Jitter:     {} ({:.2}ms <= 2ms)",
+    println!(
+        "  Jitter:     {} ({:.2}ms <= 2ms)",
         if check.jitter_ok { "PASS" } else { "FAIL" },
         check.actual_jitter_ms
     );
     println!();
 
-    println!("Status: {}", if check.all_ok() { "ALL TARGETS MET" } else { "SOME TARGETS MISSED" });
+    println!(
+        "Status: {}",
+        if check.all_ok() {
+            "ALL TARGETS MET"
+        } else {
+            "SOME TARGETS MISSED"
+        }
+    );
     println!();
 
     println!("=== Demo Complete ===");
-    println!("Produced {} items, updated dashboard {} times", produced, update_count);
+    println!(
+        "Produced {} items, updated dashboard {} times",
+        produced, update_count
+    );
 }

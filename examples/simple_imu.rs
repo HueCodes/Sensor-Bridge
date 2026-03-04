@@ -1,11 +1,28 @@
-//! Simple IMU example demonstrating basic pipeline usage.
+//! Simple IMU pipeline — the "Hello, World" for sensor-bridge.
 //!
-//! This example shows:
-//! - Creating a mock IMU sensor
-//! - Setting up a processing pipeline with filters
-//! - Running the pipeline in separate threads
+//! This example demonstrates the lowest-level building blocks:
+//! - A [`RingBuffer`] as the lock-free data channel between sensor and processor
+//! - A single-stage [`PipelineBuilder`] with a moving-average filter
+//! - Two threads: one producer (sensor driver), one consumer (signal processor)
+//!
+//! ## Why SPSC ring buffer?
+//!
+//! A sensor driver is inherently single-producer (one hardware interrupt source)
+//! and the downstream processor is single-consumer. Using a single-producer,
+//! single-consumer (SPSC) ring buffer allows the implementation to be *wait-free*:
+//! push and pop never contend on a lock, eliminating the latency jitter that
+//! mutex-based queues introduce on real-time systems.
+//!
+//! ## Why `Box::leak`?
+//!
+//! Thread spawning in Rust requires `'static` data. By heap-allocating the buffer
+//! and leaking its Box, we give the producer and consumer handles a `'static`
+//! lifetime so they can be moved into separate threads. The memory is reclaimed
+//! implicitly when the process exits (acceptable for an embedded-style main loop).
+//!
+//! Run with: `cargo run --example simple_imu`
 
-use sensor_pipeline::{
+use sensor_bridge::{
     buffer::RingBuffer,
     pipeline::{PipelineBuilder, PipelineRunner},
     sensor::{MockImu, NoiseConfig, Sensor, Vec3},
@@ -23,9 +40,7 @@ fn main() {
 
     // Create a ring buffer for IMU data
     // Using a leaked box to get 'static lifetime for thread spawning
-    let buffer = Box::leak(Box::new(
-        RingBuffer::<Timestamped<ImuReading>, 1024>::new(),
-    ));
+    let buffer = Box::leak(Box::new(RingBuffer::<Timestamped<ImuReading>, 1024>::new()));
     let (producer, consumer) = buffer.split();
 
     // Shutdown flag
@@ -138,7 +153,7 @@ impl MovingAverageWrapper {
     }
 }
 
-impl sensor_pipeline::stage::Stage for MovingAverageWrapper {
+impl sensor_bridge::stage::Stage for MovingAverageWrapper {
     type Input = (u64, u64, f32);
     type Output = (u64, u64, f32, f32);
 

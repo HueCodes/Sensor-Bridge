@@ -1,11 +1,29 @@
-//! Multi-sensor fusion example.
+//! Multi-sensor fusion with timestamp synchronization.
 //!
-//! This example demonstrates:
-//! - Running multiple sensors concurrently
-//! - Timestamp-based synchronization
-//! - Sensor fusion
+//! This example demonstrates fusing two sensors running at different rates:
+//! an IMU at 100 Hz and a barometer at 10 Hz. Because the sensors run
+//! independently, their readings arrive at different times and must be
+//! aligned before fusing.
+//!
+//! ## Why timestamp synchronization?
+//!
+//! Naively pairing the most recent reading from each sensor gives you data
+//! that may be up to one sensor period apart in time. For physics-based
+//! fusion (e.g., Kalman filters) this introduces integration errors
+//! proportional to the time mismatch. [`TimestampSync`] accumulates readings
+//! from each stream and only emits a fused pair when the timestamps are
+//! within a configurable tolerance, discarding samples that cannot be matched.
+//!
+//! ## Why separate SPSC buffers per sensor?
+//!
+//! Each sensor has its own producer thread and its own ring buffer. This keeps
+//! the sensor drivers fully independent — a slow barometer cannot block the
+//! fast IMU path. The fusion stage is the single consumer of both buffers and
+//! decides when to pair readings.
+//!
+//! Run with: `cargo run --example multi_sensor`
 
-use sensor_pipeline::{
+use sensor_bridge::{
     buffer::RingBuffer,
     sensor::{MockImu, NoiseConfig, Sensor},
     stage::TimestampSync,
@@ -28,9 +46,7 @@ fn main() {
     println!("=== Multi-Sensor Fusion Example ===\n");
 
     // Create buffers for both sensors
-    let imu_buffer = Box::leak(Box::new(
-        RingBuffer::<Timestamped<ImuReading>, 512>::new(),
-    ));
+    let imu_buffer = Box::leak(Box::new(RingBuffer::<Timestamped<ImuReading>, 512>::new()));
     let baro_buffer = Box::leak(Box::new(
         RingBuffer::<Timestamped<BarometerReading>, 128>::new(),
     ));
@@ -58,7 +74,7 @@ fn main() {
     // Barometer producer - 20Hz (slower sensor)
     let running_baro = Arc::clone(&running);
     let baro_handle = thread::spawn(move || {
-        let clock = sensor_pipeline::timestamp::MonotonicClock::new();
+        let clock = sensor_bridge::timestamp::MonotonicClock::new();
         let mut seq = 0u64;
 
         while running_baro.load(Ordering::Relaxed) {
