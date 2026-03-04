@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish-dry-run:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify package
+        run: cargo package --list
+      - name: Publish dry-run
+        run: cargo publish --dry-run
+        # To actually publish, run: cargo publish
+        # This workflow intentionally does not publish automatically.
+        # The crate owner controls the release by running cargo publish locally.
