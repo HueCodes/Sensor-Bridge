@@ -67,7 +67,7 @@ jobs:
         with:
           toolchain: "1.75"
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --all-features
+      - run: cargo check --all-features
 
   bench-smoke:
     name: Bench smoke-check

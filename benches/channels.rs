@@ -161,30 +161,34 @@ fn bench_channel_capacity(c: &mut Criterion) {
     group.throughput(Throughput::Elements(10000));
 
     for capacity in [64usize, 256, 1024, 4096] {
-        group.bench_with_input(BenchmarkId::from_parameter(capacity), &capacity, |b, &cap| {
-            b.iter(|| {
-                let (tx, rx) = sensor_bridge::channel::bounded::<u64>(cap);
+        group.bench_with_input(
+            BenchmarkId::from_parameter(capacity),
+            &capacity,
+            |b, &cap| {
+                b.iter(|| {
+                    let (tx, rx) = sensor_bridge::channel::bounded::<u64>(cap);
 
-                let producer = thread::spawn(move || {
-                    for i in 0..10000u64 {
-                        tx.send(i).unwrap();
-                    }
-                });
-
-                let consumer = thread::spawn(move || {
-                    let mut sum = 0u64;
-                    for _ in 0..10000 {
-                        if let Some(v) = rx.recv() {
-                            sum += v;
+                    let producer = thread::spawn(move || {
+                        for i in 0..10000u64 {
+                            tx.send(i).unwrap();
                         }
-                    }
-                    sum
-                });
+                    });
 
-                producer.join().unwrap();
-                black_box(consumer.join().unwrap());
-            });
-        });
+                    let consumer = thread::spawn(move || {
+                        let mut sum = 0u64;
+                        for _ in 0..10000 {
+                            if let Some(v) = rx.recv() {
+                                sum += v;
+                            }
+                        }
+                        sum
+                    });
+
+                    producer.join().unwrap();
+                    black_box(consumer.join().unwrap());
+                });
+            },
+        );
     }
 
     group.finish();

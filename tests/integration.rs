@@ -483,17 +483,14 @@ mod loom_tests {
     fn loom_spsc_no_data_race() {
         loom::model(|| {
             // Use a Box::leak because loom requires 'static lifetimes for thread spawns
-            let buf: &'static RingBuffer<u64, 4> =
-                Box::leak(Box::new(RingBuffer::<u64, 4>::new()));
+            let buf: &'static RingBuffer<u64, 4> = Box::leak(Box::new(RingBuffer::<u64, 4>::new()));
             let (producer, consumer) = buf.split();
 
             let t1 = thread::spawn(move || {
                 producer.push(42u64).ok();
             });
 
-            let t2 = thread::spawn(move || {
-                consumer.pop()
-            });
+            let t2 = thread::spawn(move || consumer.pop());
 
             t1.join().unwrap();
             let _ = t2.join().unwrap();
