@@ -11,7 +11,7 @@ homepage = "https://github.com/huecodes/sensor-bridge"
 documentation = "https://docs.rs/sensor-bridge"
 keywords = ["robotics", "real-time", "sensor", "lock-free", "pipeline"]
 categories = ["embedded", "concurrency", "science::robotics"]
-exclude = ["PRODUCTIONIZE.md", ".github/**", "assets/**"]
+exclude = ["docs/**", ".github/**", "assets/**", "scripts/**", "static/**", "demo.tape", "sensor-bridge-demo.gif"]
 
 [lib]
 name = "sensor_bridge"
