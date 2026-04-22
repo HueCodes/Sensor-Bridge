@@ -33,7 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture / driver / performance docs** under `docs/`
 - **GitHub issue templates** (bug, feature)
 - **`justfile`** wrapping `check`, `lint`, `test`, `bench`, `demo`
-- **Consolidated roadmap** at `docs/ROADMAP.md`
 
 ### Fixed
 

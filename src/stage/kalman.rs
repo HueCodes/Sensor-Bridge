@@ -9,9 +9,8 @@
 //! measurements.
 //!
 //! For a full 6-DoF INS (3-D position + 3-D velocity from accelerometer
-//! integration), enable the `dsp` feature in a future release and bring in
-//! `nalgebra` — at 6 states the hand-rolled matrix algebra starts to cost
-//! more than it saves. See `docs/ROADMAP.md`.
+//! integration), bring in `nalgebra` behind a future `dsp` feature — at 6
+//! states the hand-rolled matrix algebra starts to cost more than it saves.
 
 use crate::math;
 
