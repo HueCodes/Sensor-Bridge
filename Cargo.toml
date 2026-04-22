@@ -31,6 +31,9 @@ parking_lot = { version = "0.12", optional = true }
 # HDR histogram for accurate latency percentiles
 hdrhistogram = { version = "7.5", optional = true }
 
+# Pure-Rust math functions that work in no_std (sqrt, sin_cos, ceil, etc).
+libm = "0.2"
+
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.4"

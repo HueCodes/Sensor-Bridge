@@ -56,6 +56,10 @@
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+mod math;
+
 pub mod buffer;
 pub mod error;
 pub mod metrics;

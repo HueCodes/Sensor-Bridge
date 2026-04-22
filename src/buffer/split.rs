@@ -3,9 +3,12 @@
 //! This module provides owned handles that take ownership of the ring buffer,
 //! allowing them to be used across threads without lifetime concerns.
 
+#[cfg(feature = "std")]
 use core::sync::atomic::Ordering;
 
+#[cfg(feature = "std")]
 use super::ring::RingBuffer;
+#[cfg(feature = "std")]
 use super::CachePadded;
 
 #[cfg(feature = "std")]
@@ -171,6 +174,7 @@ impl<T, const N: usize> RingBuffer<T, N> {
 }
 
 /// Backpressure policy for when the buffer is full.
+#[cfg(feature = "std")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackpressurePolicy {
     /// Drop the oldest data in the buffer to make room for new data.
@@ -181,7 +185,6 @@ pub enum BackpressurePolicy {
     DropNewest,
     /// Block until space is available.
     /// Only suitable for non-real-time paths.
-    #[cfg(feature = "std")]
     Block,
 }
 

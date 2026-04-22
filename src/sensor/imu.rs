@@ -62,7 +62,7 @@ impl Vec3 {
     #[inline]
     #[must_use]
     pub fn magnitude(&self) -> f32 {
-        self.magnitude_squared().sqrt()
+        crate::math::sqrt_f32(self.magnitude_squared())
     }
 
     /// Returns a normalized (unit length) version of this vector.

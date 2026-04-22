@@ -162,7 +162,7 @@ impl JitterTracker {
     #[inline]
     #[must_use]
     pub fn std_dev(&self) -> f64 {
-        self.variance().sqrt()
+        crate::math::sqrt_f64(self.variance())
     }
 
     /// Returns the standard deviation in microseconds.

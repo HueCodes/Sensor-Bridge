@@ -168,7 +168,7 @@ impl LatencyHistogram {
             return 0;
         }
 
-        let target = ((count as f64) * p).ceil() as u64;
+        let target = crate::math::ceil_f64((count as f64) * p) as u64;
         let mut cumulative = 0u64;
 
         for (i, bucket) in self.buckets.iter().enumerate() {

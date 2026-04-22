@@ -31,7 +31,7 @@ impl LidarPoint2D {
     #[inline]
     #[must_use]
     pub fn to_cartesian(&self) -> (f32, f32) {
-        let (sin, cos) = self.angle.sin_cos();
+        let (sin, cos) = crate::math::sin_cos_f32(self.angle);
         (self.range * cos, self.range * sin)
     }
 
@@ -74,8 +74,8 @@ impl LidarPoint3D {
     #[inline]
     #[must_use]
     pub fn to_cartesian(&self) -> (f32, f32, f32) {
-        let (sin_az, cos_az) = self.azimuth.sin_cos();
-        let (sin_el, cos_el) = self.elevation.sin_cos();
+        let (sin_az, cos_az) = crate::math::sin_cos_f32(self.azimuth);
+        let (sin_el, cos_el) = crate::math::sin_cos_f32(self.elevation);
         let r_cos_el = self.range * cos_el;
         (r_cos_el * cos_az, r_cos_el * sin_az, self.range * sin_el)
     }

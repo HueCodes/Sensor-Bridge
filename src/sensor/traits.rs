@@ -3,6 +3,8 @@
 //! This module defines the core [`Sensor`] trait that all sensor implementations
 //! must implement, providing a common interface for sampling data with timestamps.
 
+use alloc::string::String;
+
 use crate::error::Result;
 use crate::timestamp::Timestamped;
 

@@ -2,6 +2,7 @@
 //!
 //! The builder pattern allows constructing complex pipelines with a fluent API.
 
+#[cfg(feature = "std")]
 use crate::buffer::RingBuffer;
 use crate::stage::{Chain, Filter, FilterMap, Inspect, Map, Stage};
 

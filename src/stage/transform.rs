@@ -35,7 +35,7 @@ impl RotationMatrix {
     /// Creates a rotation matrix for rotation around the X axis.
     #[must_use]
     pub fn rotation_x(angle_rad: f32) -> Self {
-        let (sin, cos) = angle_rad.sin_cos();
+        let (sin, cos) = crate::math::sin_cos_f32(angle_rad);
         Self {
             data: [[1.0, 0.0, 0.0], [0.0, cos, -sin], [0.0, sin, cos]],
         }
@@ -44,7 +44,7 @@ impl RotationMatrix {
     /// Creates a rotation matrix for rotation around the Y axis.
     #[must_use]
     pub fn rotation_y(angle_rad: f32) -> Self {
-        let (sin, cos) = angle_rad.sin_cos();
+        let (sin, cos) = crate::math::sin_cos_f32(angle_rad);
         Self {
             data: [[cos, 0.0, sin], [0.0, 1.0, 0.0], [-sin, 0.0, cos]],
         }
@@ -53,7 +53,7 @@ impl RotationMatrix {
     /// Creates a rotation matrix for rotation around the Z axis.
     #[must_use]
     pub fn rotation_z(angle_rad: f32) -> Self {
-        let (sin, cos) = angle_rad.sin_cos();
+        let (sin, cos) = crate::math::sin_cos_f32(angle_rad);
         Self {
             data: [[cos, -sin, 0.0], [sin, cos, 0.0], [0.0, 0.0, 1.0]],
         }
