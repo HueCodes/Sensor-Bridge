@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Network sensor drivers** behind a new `network` feature
+  - `UdpSensor<T>` binds a tokio UDP socket, deserializes JSON datagrams
+    and exposes them as a `Sensor`
+  - `TcpSensor<T>` consumes length-prefixed JSON frames with capped
+    exponential-backoff reconnect
+  - Shared `NetworkMetrics` counters for packets / drops / parse errors /
+    socket errors / reconnects
+- **Signal-processing stages**
+  - `ComplementaryFilter` — gyro high-pass + accel low-pass per axis
+  - `KalmanFilter2D` — 2-state constant-velocity Kalman, closed-form
+    covariance, no linear-algebra dep
+- **Output sinks** (`src/sinks/`)
+  - `CsvSink<T: CsvRow>`, `TapSink<T>`, `UdpSink`, `WsSink`
+    (WebSocket broadcast, feature = `websocket`)
+  - Single-file `static/dashboard.html` for a live browser view
+- **CLI binary** `sensor-bridge` behind the new `cli` feature, with
+  subcommands `demo`, `listen`, `record`, `replay`, `bench`
+- **Examples**: `imu_fusion` (complementary filter on simulated
+  MPU-6050), `udp_demo` (live network → pipeline → stats)
+- **Python mock sender** (`scripts/mock_udp_sender.py`) — stdlib-only,
+  simulates MPU-6050 + DHT11 + HC-SR04
+- **Architecture / driver / performance docs** under `docs/`
+- **GitHub issue templates** (bug, feature)
+- **`justfile`** wrapping `check`, `lint`, `test`, `bench`, `demo`
+- **Consolidated roadmap** at `docs/ROADMAP.md`
+
+### Fixed
+
+- `cargo build --no-default-features` now succeeds. Pulls in `libm` for
+  `sqrt` / `sin_cos` / `ceil` and routes `String` through `alloc`
+  for the sensor metadata types.
+
+### Feature flags
+
+`default = ["std"]`, plus opt-in `network`, `websocket`, `cli` and
+`full` (everything except `dsp`, which is reserved for a future
+`nalgebra`-backed Kalman).
+
 ## [0.1.0] - Unreleased
 
 ### Added

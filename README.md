@@ -12,6 +12,11 @@
 
 4-stage pipeline · SPSC ring buffers · **2.2B items/sec** · **~20ns latency**
 
+Real sensors too — feed it UDP or TCP JSON packets from an ESP32, a
+lab rig, or the included [Python mock sender](scripts/mock_udp_sender.py),
+and watch live data flow through the pipeline in seconds. See
+[`examples/udp_demo.rs`](examples/udp_demo.rs).
+
 </div>
 
 ---
@@ -92,6 +97,8 @@ sensor-bridge = { version = "0.1", default-features = false }
 | [`full_pipeline`](examples/full_pipeline.rs) | All 4 stages, realistic sensor data, throughput report |
 | [`metrics_demo`](examples/metrics_demo.rs) | Live dashboard, latency percentiles, performance targets |
 | [`benchmark_latency`](examples/benchmark_latency.rs) | End-to-end latency measurement across scenarios |
+| [`imu_fusion`](examples/imu_fusion.rs) | Complementary filter on simulated MPU-6050 with RMSE vs truth |
+| [`udp_demo`](examples/udp_demo.rs) | Live UDP sensor → 4-stage pipeline → stats dashboard (feature = network) |
 
 ```bash
 cargo run --example simple_imu
@@ -99,6 +106,20 @@ cargo run --example multi_sensor
 cargo run --example full_pipeline
 cargo run --example metrics_demo
 cargo run --example benchmark_latency --release
+cargo run --example imu_fusion
+# In two shells:
+cargo run --features network --example udp_demo -- --bind 127.0.0.1:9000
+python3 scripts/mock_udp_sender.py --target 127.0.0.1:9000
+```
+
+## CLI
+
+```bash
+cargo run --features cli -- demo            # python mock + pipeline + stats
+cargo run --features cli -- listen          # UDP ingest, stream stats
+cargo run --features cli -- record --output data.csv
+cargo run --features cli -- replay --input data.csv
+cargo run --features cli -- bench --items 1000000 --release
 ```
 
 ## Benchmarks

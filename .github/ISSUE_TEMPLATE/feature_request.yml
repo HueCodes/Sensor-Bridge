@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a feature or change.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the concrete use case, not the abstract solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Rough API sketch or behavior change. Pseudocode is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you try or think about?
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links, related issues, screenshots.

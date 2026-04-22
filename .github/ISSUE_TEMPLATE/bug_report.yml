@@ -1,0 +1,60 @@
+name: Bug report
+description: Report unexpected behavior in sensor-bridge.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. The more reproducible
+        detail you include, the faster this lands.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you observe?
+      placeholder: "The UDP sensor drops packets under backpressure even though the queue is empty."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: "No packets should be dropped while the pipeline can keep up."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimum commands / code that reproduce the issue.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: rust-version
+    attributes:
+      label: Rust version
+      placeholder: "1.89.0"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: "macOS 15 aarch64 / Ubuntu 24.04 x86_64"
+    validations:
+      required: true
+  - type: input
+    id: crate-version
+    attributes:
+      label: sensor-bridge version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or backtrace
+      description: Relevant logs. Run with `RUST_BACKTRACE=1` if you have a panic.
+      render: text
