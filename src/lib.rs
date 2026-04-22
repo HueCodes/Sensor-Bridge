@@ -72,6 +72,8 @@ pub mod timestamp;
 pub mod backpressure;
 #[cfg(feature = "std")]
 pub mod channel;
+#[cfg(feature = "network")]
+pub mod drivers;
 #[cfg(feature = "std")]
 pub mod zero_copy;
 

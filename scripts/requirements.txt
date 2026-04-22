@@ -1,0 +1,3 @@
+# The mock UDP sender uses only the Python standard library.
+# This file exists so future helper scripts (live plot, replay) can share
+# a single pip-install target.
