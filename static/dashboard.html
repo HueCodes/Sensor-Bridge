@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>sensor-bridge dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #191c24;
+      --text: #d8dee9;
+      --muted: #788195;
+      --accent: #79c2c2;
+      --warn: #e5a15c;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 14px 22px;
+      border-bottom: 1px solid #262a33;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: 0.04em; }
+    .status { font-size: 12px; color: var(--muted); }
+    .status.connected { color: var(--accent); }
+    .status.disconnected { color: var(--warn); }
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 14px;
+      padding: 14px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid #262a33;
+      border-radius: 6px;
+      padding: 12px 14px;
+      min-height: 220px;
+    }
+    .card h2 {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin: 0 0 8px 0;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .value {
+      font-variant-numeric: tabular-nums;
+      font-size: 24px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .sub { font-size: 11px; color: var(--muted); }
+    canvas { width: 100% !important; height: 180px !important; }
+    input#ws {
+      width: 280px;
+      background: #0b0d12;
+      border: 1px solid #262a33;
+      color: var(--text);
+      padding: 4px 8px;
+      font-family: inherit;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>sensor-bridge</h1>
+    <div>
+      <input id="ws" value="ws://127.0.0.1:9090" />
+      <button id="connect">connect</button>
+      <span id="status" class="status disconnected">disconnected</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>IMU |accel| (m/s²)</h2>
+      <div id="accel-latest" class="value">-</div>
+      <canvas id="accel-chart"></canvas>
+    </section>
+    <section class="card">
+      <h2>IMU |gyro| (rad/s)</h2>
+      <div id="gyro-latest" class="value">-</div>
+      <canvas id="gyro-chart"></canvas>
+    </section>
+    <section class="card">
+      <h2>distance (cm)</h2>
+      <div id="dist-latest" class="value">-</div>
+      <canvas id="dist-chart"></canvas>
+    </section>
+    <section class="card">
+      <h2>temperature (°C)</h2>
+      <div id="temp-latest" class="value">-</div>
+      <canvas id="temp-chart"></canvas>
+    </section>
+    <section class="card">
+      <h2>messages</h2>
+      <div id="msg-count" class="value">0</div>
+      <div class="sub">parse errors: <span id="parse-errs">0</span></div>
+    </section>
+  </main>
+
+  <script>
+    const HISTORY = 200;
+    const charts = {};
+    function makeChart(id, color) {
+      const ctx = document.getElementById(id).getContext("2d");
+      return new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: Array.from({ length: HISTORY }, () => ""),
+          datasets: [{
+            data: Array(HISTORY).fill(null),
+            borderColor: color,
+            backgroundColor: "rgba(121,194,194,0.1)",
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.15,
+            fill: true,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { ticks: { color: "#788195", font: { size: 10 } }, grid: { color: "#22252e" } },
+          },
+        },
+      });
+    }
+
+    function pushSample(chart, value) {
+      const ds = chart.data.datasets[0].data;
+      ds.push(value);
+      if (ds.length > HISTORY) ds.shift();
+      chart.update("none");
+    }
+
+    charts.accel = makeChart("accel-chart", "#79c2c2");
+    charts.gyro = makeChart("gyro-chart", "#c2a279");
+    charts.dist = makeChart("dist-chart", "#9cbf5f");
+    charts.temp = makeChart("temp-chart", "#c27979");
+
+    let msgCount = 0;
+    let parseErrors = 0;
+    const msgCountEl = document.getElementById("msg-count");
+    const parseErrsEl = document.getElementById("parse-errs");
+    const statusEl = document.getElementById("status");
+
+    let socket = null;
+    function connect(url) {
+      if (socket) socket.close();
+      statusEl.textContent = "connecting";
+      statusEl.className = "status disconnected";
+      socket = new WebSocket(url);
+      socket.onopen = () => {
+        statusEl.textContent = "connected";
+        statusEl.className = "status connected";
+      };
+      socket.onclose = () => {
+        statusEl.textContent = "disconnected";
+        statusEl.className = "status disconnected";
+      };
+      socket.onerror = () => {
+        statusEl.textContent = "error";
+        statusEl.className = "status disconnected";
+      };
+      socket.onmessage = (ev) => {
+        let msg;
+        try {
+          msg = JSON.parse(ev.data);
+        } catch (_e) {
+          parseErrors += 1;
+          parseErrsEl.textContent = parseErrors;
+          return;
+        }
+        msgCount += 1;
+        msgCountEl.textContent = msgCount;
+
+        if (typeof msg.accel_magnitude === "number") {
+          pushSample(charts.accel, msg.accel_magnitude);
+          document.getElementById("accel-latest").textContent = msg.accel_magnitude.toFixed(2);
+        }
+        if (typeof msg.gyro_rate === "number") {
+          pushSample(charts.gyro, msg.gyro_rate);
+          document.getElementById("gyro-latest").textContent = msg.gyro_rate.toFixed(3);
+        }
+        if (typeof msg.distance_cm === "number") {
+          pushSample(charts.dist, msg.distance_cm);
+          document.getElementById("dist-latest").textContent = msg.distance_cm.toFixed(1);
+        }
+        if (typeof msg.temp_c === "number") {
+          pushSample(charts.temp, msg.temp_c);
+          document.getElementById("temp-latest").textContent = msg.temp_c.toFixed(1);
+        }
+      };
+    }
+
+    document.getElementById("connect").addEventListener("click", () => {
+      connect(document.getElementById("ws").value.trim());
+    });
+  </script>
+</body>
+</html>

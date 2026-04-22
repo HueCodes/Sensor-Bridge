@@ -75,6 +75,8 @@ pub mod channel;
 #[cfg(feature = "network")]
 pub mod drivers;
 #[cfg(feature = "std")]
+pub mod sinks;
+#[cfg(feature = "std")]
 pub mod zero_copy;
 
 // Re-export commonly used types at crate root

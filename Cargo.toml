@@ -22,8 +22,10 @@ default = ["std"]
 std = ["crossbeam/std", "parking_lot", "hdrhistogram"]
 # UDP/TCP ingestion + JSON framing. Requires std.
 network = ["std", "dep:tokio", "dep:serde", "dep:serde_json"]
+# Broadcasting WebSocket sink for live dashboards.
+websocket = ["network", "dep:tokio-tungstenite", "dep:futures-util"]
 # Full convenience bundle for local development.
-full = ["std", "network"]
+full = ["std", "network", "websocket"]
 
 [dependencies]
 # Lock-free data structures and channels
@@ -42,6 +44,8 @@ libm = "0.2"
 tokio = { version = "1", default-features = false, features = ["net", "rt-multi-thread", "macros", "sync", "time", "io-util", "signal"], optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
+tokio-tungstenite = { version = "0.24", default-features = false, features = ["handshake"], optional = true }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"], optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
