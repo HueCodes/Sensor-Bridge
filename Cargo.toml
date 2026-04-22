@@ -88,6 +88,10 @@ name = "metrics_demo"
 path = "examples/metrics_demo.rs"
 
 [[example]]
+name = "imu_fusion"
+path = "examples/imu_fusion.rs"
+
+[[example]]
 name = "udp_demo"
 path = "examples/udp_demo.rs"
 required-features = ["network"]

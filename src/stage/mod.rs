@@ -23,17 +23,21 @@
 //! assert_eq!(pipeline.process(6), Some(13)); // 12 + 1
 //! ```
 
+mod complementary;
 mod filter;
 mod fusion;
+mod kalman;
 mod traits;
 mod transform;
 
 // Re-export all stage types
+pub use complementary::{ComplementaryFilter, ComplementaryInput};
 pub use filter::{
     ExponentialMovingAverage, Filterable, HighPassFilter, KalmanFilter1D, LowPassFilter,
     MedianFilter, MovingAverage,
 };
 pub use fusion::{Fuse, SyncInput, SyncedPair, TimestampBuffer, TimestampSync, WeightedAverage};
+pub use kalman::{KalmanConfig, KalmanEstimate, KalmanFilter2D, KalmanMeasurement};
 pub use traits::{Chain, Filter, FilterMap, Identity, Inspect, Map, Stage, StageExt};
 pub use transform::{
     units, BiasCorrection, ImuTransform, ImuUnitConversion, RotationMatrix, Scale, VectorTransform,
